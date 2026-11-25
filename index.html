@@ -3,555 +3,488 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>БУНКЕР LIVE — Командная игра</title>
+<title>БУНКЕР LIVE v2.1</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-  body { background: #0f172a; color: #f8fafc; min-height: 100vh; padding: 16px; }
-  .container { max-width: 1100px; margin: 0 auto; }
-  .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; background: #1e293b; padding: 14px 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #334155; gap: 10px; }
-  .logo { font-size: 22px; font-weight: 800; color: #facc15; display: flex; align-items: center; gap: 8px; }
-  .badge { font-size: 11px; background: #ea580c; color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
-  .status { font-size: 13px; padding: 5px 12px; border-radius: 20px; background: #0f172a; border: 1px solid #334155; color: #94a3b8; }
-  .status.ok { border-color: #22c55e; color: #4ade80; }
-  .status.err { border-color: #ef4444; color: #f87171; }
-  .card-box { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 24px; max-width: 460px; margin: 40px auto; text-align: center; }
-  .card-box h2 { font-size: 22px; margin-bottom: 10px; }
-  .card-box p { color: #94a3b8; font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
-  .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 10px; transition: 0.15s; text-align: center; }
-  .btn-green { background: #22c55e; color: #052e16; }
-  .btn-green:hover { background: #16a34a; }
-  .btn-dark { background: #334155; color: #f8fafc; }
-  .btn-dark:hover { background: #475569; }
-  .btn-yellow { background: #facc15; color: #422006; }
-  .btn-yellow:hover { background: #eab308; }
-  .btn-red { background: #ef4444; color: #fff; }
-  .btn-sm { display: inline-block; width: auto; padding: 8px 14px; font-size: 13px; margin: 4px; }
-  input, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 15px; margin-bottom: 12px; }
-  .hidden { display: none !important; }
-  .panel { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 18px; margin-bottom: 16px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
-  .p-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; }
-  .p-card.dead { opacity: 0.45; border-color: #ef4444; }
-  .p-name { font-size: 18px; font-weight: 700; color: #facc15; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-  .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid #334155; font-size: 13px; gap: 8px; }
-  .stat-row:last-child { border-bottom: none; }
-  .stat-label { color: #94a3b8; font-weight: 600; min-width: 85px; }
-  .stat-val { color: #f8fafc; text-align: right; flex: 1; }
-  .stat-hidden { color: #64748b; font-style: italic; }
-  .timer-box { font-size: 32px; font-weight: 800; color: #facc15; text-align: center; padding: 10px; background: #0f172a; border-radius: 10px; margin-bottom: 10px; }
-  .my-secret { border: 2px solid #22c55e; background: #052e16; }
+  :root {
+    --bg: #0b0f17;
+    --card: #141b29;
+    --card-border: #232f46;
+    --accent: #f59e0b;
+    --blue: #3b82f6;
+    --green: #10b981;
+    --red: #ef4444;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
+  .container { max-width: 920px; margin: 0 auto; padding: 14px; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 12px 16px; border-radius: 14px; border: 1px solid var(--card-border); margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+  .logo { font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+  .badge-v { background: var(--green); color: #000; font-size: 0.72rem; padding: 2px 7px; border-radius: 6px; font-weight: 900; }
+  .status-pill { font-size: 0.8rem; padding: 4px 10px; border-radius: 20px; background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 600; }
+  .status-pill.err { background: rgba(239, 68, 68, 0.15); color: var(--red); border-color: rgba(239, 68, 68, 0.3); }
+
+  .btn { cursor: pointer; border: none; border-radius: 10px; padding: 11px 16px; font-weight: 700; font-size: 0.95rem; transition: 0.15s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: #fff; background: #263248; }
+  .btn:hover { filter: brightness(1.12); }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-blue { background: var(--blue); }
+  .btn-green { background: var(--green); color: #000; }
+  .btn-red { background: var(--red); }
+  .btn-sm { padding: 6px 10px; font-size: 0.8rem; border-radius: 8px; }
+  .btn-block { width: 100%; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .hero-box { background: var(--card); border: 1px solid var(--card-border); border-radius: 18px; padding: 24px; text-align: center; max-width: 460px; margin: 20px auto; }
+  .hero-box h1 { font-size: 1.6rem; margin-bottom: 8px; }
+  .hero-box p { color: var(--muted); font-size: 0.92rem; margin-bottom: 18px; }
+  .role-grid { display: flex; flex-direction: column; gap: 10px; }
+  .input-field { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--card-border); background: #0b0f17; color: #fff; font-size: 1rem; margin-bottom: 12px; }
+  textarea.input-field { min-height: 110px; resize: vertical; }
+
+  .card-box { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+  .my-card { border: 2px solid var(--blue); background: #131c2e; }
+  .trait-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px dashed rgba(255,255,255,0.08); gap: 8px; font-size: 0.9rem; }
+  .trait-row:last-child { border-bottom: none; }
+  .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
+  .p-card { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; }
+  .p-card.eliminated { opacity: 0.45; border-color: var(--red); }
+  .timer-box { font-size: 1.4rem; font-weight: 900; background: #0b0f17; padding: 6px 14px; border-radius: 10px; border: 1px solid var(--card-border); color: var(--green); }
+  .admin-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
+  .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; font-weight: 800; padding: 10px 18px; border-radius: 12px; z-index: 200; display: none; }
 </style>
 </head>
 <body>
+
 <div class="container">
-  <div class="header">
-    <div class="logo">☢️ БУНКЕР <span class="badge">LIVE v2</span></div>
-    <div style="display:flex; align-items:center; gap:8px;">
-      <span id="connStatus" class="status">● Проверка связи...</span>
-      <button id="btnExitRole" class="btn btn-dark btn-sm hidden">Выйти</button>
+  <div class="topbar">
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v2.1 (Fast Sync)</span></div>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <span id="connStatus" class="status-pill">● Подключение...</span>
+      <button id="logoutBtn" class="btn btn-sm btn-red" style="display:none;" onclick="logoutRole()">Выйти</button>
     </div>
   </div>
 
-  <!-- ЭКРАН 1: ВЫБОР РОЛИ -->
-  <div id="screenRole" class="card-box">
-    <h2>Выберите вашу роль</h2>
-    <p>Для входа в общую партию выберите свой статус. Все данные обновляются автоматически.</p>
-    <button id="btnRolePlayer" class="btn btn-green">👥 Я обычный игрок</button>
-    <button id="btnRoleAdmin1" class="btn btn-dark">🛡️ Ведущий №1 (Админ)</button>
-    <button id="btnRoleAdmin2" class="btn btn-dark">🛡️ Ведущий №2 (Админ)</button>
+  <!-- 1. ВХОД -->
+  <div id="screenLogin" class="screen active">
+    <div class="hero-box">
+      <h1>Бункер Онлайн</h1>
+      <p>Выберите вашу роль для входа в игру</p>
+      <div class="role-grid">
+        <button class="btn btn-green btn-block" onclick="selectPlayerMode()">👥 Я обычный игрок</button>
+        <button class="btn btn-primary btn-block" onclick="openAdminAuth(1)">🛡️ Ведущий №1 (Админ)</button>
+        <button class="btn btn-blue btn-block" onclick="openAdminAuth(2)">🛡️ Ведущий №2 (Админ)</button>
+      </div>
+      <div id="adminPassBox" style="display:none; margin-top:16px; padding-top:14px; border-top:1px solid var(--card-border);">
+        <p id="adminPassTitle" style="margin-bottom:8px; font-weight:700; color:var(--accent);"></p>
+        <input type="password" id="adminPassInput" class="input-field" placeholder="Пароль ведущего">
+        <button class="btn btn-primary btn-block" onclick="submitAdminAuth()">Войти</button>
+      </div>
+    </div>
   </div>
 
-  <!-- ЭКРАН 2: ВХОД ДЛЯ АДМИНА -->
-  <div id="screenLogin" class="card-box hidden">
-    <h2 id="loginTitle">Вход для ведущего</h2>
-    <p>Введите пароль администратора для доступа к панели управления.</p>
-    <input type="password" id="adminPassInput" placeholder="Введите пароль">
-    <button id="btnDoLogin" class="btn btn-yellow">Войти в панель</button>
-    <button id="btnBackFromLogin" class="btn btn-dark">Назад</button>
+  <!-- 2. ВЫБОР ИМЕНИ -->
+  <div id="screenPickPlayer" class="screen">
+    <div class="hero-box">
+      <h2>Выберите своё имя</h2>
+      <div id="playerPickList" class="role-grid"></div>
+      <p id="noGameMsg" style="display:none; color:var(--accent); margin-top:12px;">Ожидание запуска игры ведущими...</p>
+    </div>
   </div>
 
-  <!-- ЭКРАН 3: ВЫБОР ИМЕНИ ИГРОКА -->
-  <div id="screenPlayerSelect" class="card-box hidden">
-    <h2>Кто вы в этой игре?</h2>
-    <p>Нажмите на своё имя в списке участников, чтобы открыть свою секретную карточку.</p>
-    <div id="playerSelectList"></div>
-    <button id="btnBackFromSelect" class="btn btn-dark" style="margin-top:12px;">Назад</button>
-  </div>
-
-  <!-- ЭКРАН 4: ПАНЕЛЬ ВЕДУЩЕГО -->
-  <div id="screenAdmin" class="hidden">
-    <div class="panel">
-      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px;">
-        <h3 id="adminRoleLabel">Панель управления</h3>
-        <div>
-          <button id="btnTogglePassBox" class="btn btn-dark btn-sm">🔑 Сменить пароли</button>
-          <button id="btnToggleSetup" class="btn btn-yellow btn-sm">➕ Новая игра</button>
-        </div>
+  <!-- 3. ИГРА -->
+  <div id="screenGame" class="screen">
+    <div id="adminSetupBox" class="card-box" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h3 style="color:var(--accent);">⚙️ Настройка партии</h3>
+        <button class="btn btn-sm" onclick="changePasswordsPrompt()">🔑 Сменить пароли</button>
       </div>
-
-      <!-- Смена паролей -->
-      <div id="passBox" class="hidden" style="background:#0f172a; padding:14px; border-radius:10px; margin-bottom:12px;">
-        <h4 style="margin-bottom:8px;">Настройка паролей ведущих</h4>
-        <input type="text" id="newPass1" placeholder="Новый пароль для Ведущего №1">
-        <input type="text" id="newPass2" placeholder="Новый пароль для Ведущего №2">
-        <button id="btnSavePasswords" class="btn btn-green btn-sm">Сохранить пароли в облако</button>
-      </div>
-
-      <!-- Создание новой игры -->
-      <div id="setupBox" class="hidden" style="background:#0f172a; padding:14px; border-radius:10px; margin-bottom:12px;">
-        <h4 style="margin-bottom:8px;">Создание новой партии</h4>
-        <p style="font-size:13px; color:#94a3b8; margin-bottom:8px;">Впишите имена участников (каждое с новой строки) или нажмите кнопку быстрого заполнения:</p>
-        <div style="margin-bottom:8px;">
-          <button type="button" id="btnFill15" class="btn btn-dark btn-sm">15 игроков</button>
-          <button type="button" id="btnFill20" class="btn btn-dark btn-sm">20 игроков</button>
-          <button type="button" id="btnFill25" class="btn btn-dark btn-sm">25 игроков</button>
+      <div id="newGameForm">
+        <div class="admin-row">
+          <button class="btn btn-sm" onclick="fillPreset(15)">15 игроков</button>
+          <button class="btn btn-sm" onclick="fillPreset(18)">18 игроков</button>
+          <button class="btn btn-sm" onclick="fillPreset(22)">22 игрока</button>
         </div>
-        <textarea id="namesInput" rows="6" placeholder="Иван&#10;Мария&#10;Алексей..."></textarea>
-        <button id="btnStartNewGame" class="btn btn-green">🚀 Запустить игру для всех</button>
-      </div>
-
-      <!-- Таймер и быстрые действия -->
-      <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;">
-        <div style="flex:1; min-width:220px;">
-          <div class="timer-box" id="adminTimerDisplay">00:00</div>
-          <div style="text-align:center;">
-            <button id="btnTimer30" class="btn btn-dark btn-sm">⏱ 30 сек</button>
-            <button id="btnTimer180" class="btn btn-dark btn-sm">⏱ 3 мин</button>
-            <button id="btnTimerStop" class="btn btn-red btn-sm">⏹ Стоп</button>
-          </div>
-        </div>
-        <div style="flex:2; min-width:260px;">
-          <div id="adminDisasterBox" style="background:#0f172a; padding:12px; border-radius:10px; font-size:14px; line-height:1.5;">
-            Игра еще не создана. Нажмите «Новая игра».
-          </div>
-          <div style="margin-top:8px;">
-            <button id="btnRevealAllProf" class="btn btn-dark btn-sm">👁 Открыть всем Профессию</button>
-          </div>
+        <textarea id="namesInput" class="input-field" placeholder="Имена игроков (каждое с новой строки)"></textarea>
+        <div class="admin-row">
+          <label>Мест в бункере: <input type="number" id="seatsInput" value="8" min="2" max="20" style="width:60px; padding:6px; border-radius:8px; background:#0b0f17; color:#fff; border:1px solid var(--card-border);"></label>
+          <button class="btn btn-green" style="flex:1;" onclick="createNewGame()">🚀 Создать игру</button>
         </div>
       </div>
     </div>
 
-    <div id="adminPlayersGrid" class="grid"></div>
-  </div>
-
-  <!-- ЭКРАН 5: ЭКРАН ОБЫЧНОГО ИГРОКА -->
-  <div id="screenPlayer" class="hidden">
-    <div class="panel">
-      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px;">
-        <div style="flex:2; min-width:260px;" id="playerDisasterBox">Загрузка сценария...</div>
-        <div style="flex:1; min-width:180px;">
-          <div class="timer-box" id="playerTimerDisplay">00:00</div>
-        </div>
+    <div id="adminLiveControls" class="card-box" style="display:none;">
+      <div class="admin-row" style="justify-content:space-between;">
+        <strong style="color:var(--accent);">🎛️ Пульт ведущего</strong>
+        <div id="timerDisplay" class="timer-box">00:00</div>
+      </div>
+      <div class="admin-row">
+        <button class="btn btn-sm" onclick="startTimer(20)">⏱️ 20 сек</button>
+        <button class="btn btn-sm" onclick="startTimer(30)">⏱️ 30 сек</button>
+        <button class="btn btn-sm" onclick="startTimer(180)">⏱️ 3 мин</button>
+        <button class="btn btn-sm btn-red" onclick="stopTimer()">⏹️ Стоп</button>
+        <button class="btn btn-sm btn-red" style="margin-left:auto;" onclick="resetGameConfirm()">Новая игра</button>
       </div>
     </div>
 
-    <div id="mySecretCardBox" style="margin-bottom:20px;"></div>
-    <h3 style="margin-bottom:12px;">Общий стол участников</h3>
-    <div id="playerTableGrid" class="grid"></div>
+    <div id="disasterBlock" class="card-box" style="display:none;">
+      <h3 id="disasterTitle" style="color:var(--accent); margin-bottom:6px;"></h3>
+      <p id="disasterDesc" style="font-size:0.92rem; color:#cbd5e1; margin-bottom:8px;"></p>
+      <p id="bunkerMeta" style="font-size:0.85rem; font-weight:700; color:var(--green);"></p>
+    </div>
+
+    <div id="mySecretCard" class="card-box my-card" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h3 id="myPlayerName" style="color:var(--blue);"></h3>
+        <button class="btn btn-sm" onclick="changeMyPlayer()">Сменить имя</button>
+      </div>
+      <div id="myTraitsList"></div>
+    </div>
+
+    <div id="playersContainer" class="players-grid"></div>
   </div>
 </div>
 
+<div id="toastBox" class="toast"></div>
+
 <script>
-(function() {
-  var DB_URL = "https://bunker-test-846a1-default-rtdb.europe-west1.firebasedatabase.app/bunkerState.json";
+const DB_URL = "https://firebasedatabase.app";
 
-  var appState = {
-    passwords: { admin1: "1111", admin2: "2222" },
-    game: null,
-    timerEnd: 0
-  };
+const DISASTERS = [
+  { title: "☄️ Падение астероида", desc: "Пыль закрыла Солнце, температура -45°C, кислотные дожди.", bunker: "Срок: 2 года | Сбоит очистка воздуха, есть медотсек без врача." },
+  { title: "☣️ Пандемия вируса «Некро-9»", desc: "Поверхность охвачена эпидемией, города закрыты на карантин.", bunker: "Срок: 1.5 года | Гермошлюз требует ручной настройки." },
+  { title: "☢️ Ядерная зима", desc: "Высокий радиационный фон, электроника на поверхности выведена из строя.", bunker: "Срок: 3 года | Есть гидропонная ферма, дизель-генератор на пределе." }
+];
 
-  var currentRole = null; // "admin1", "admin2", "player"
-  var selectedAdminSlot = "admin1";
-  var myPlayerId = null;
+const PROFS = ["Врач-хирург", "Инженер-электрик", "Агроном", "Повар-технолог", "Слесарь-сантехник", "Психолог", "Строитель", "Биохимик", "Охотник", "Спасатель МЧС", "Ветеринар", "Сварщик", "Учитель", "Программист", "Автомеханик", "Стендап-комик", "Переводчик", "Юрист", "Блогер", "Фитнес-тренер"];
+const HEALTHS = ["Идеально здоров", "Лёгкая астма", "Близорукость -4.5", "Аллергия на пыль", "Гастрит", "Гипертония", "Плоскостопие", "Диабет 2-го типа", "Бессонница", "Носитель универсальной крови 0-"];
+const HOBBIES = ["Радиолюбитель", "Игра на гитаре", "Самогоноварение", "Бокс (КМС)", "Шитьё и ремонт", "Настольные игры", "Травничество", "Стрельба из лука", "Пчеловодство", "Кулинарная выпечка"];
+const PHOBIAS = ["Клаустрофобия", "Арахнофобия", "Гемофобия (боязнь крови)", "Лидерские замашки", "Перфекционист", "Подозрительность", "Вспыльчивость", "Интроверт", "Клептомания", "Гипер-оптимист"];
+const BAGS = ["Полевая аптечка", "Набор инструментов", "Семена овощей", "Ящик тушёнки", "Канистра спирта 20л", "Солнечная панель и фонари", "Фильтр для воды", "Настольные игры и книги", "Охотничье ружьё", "Сварочный аппарат"];
 
-  var DISASTERS = [
-    { title: "Ядерная зима", desc: "После глобального конфликта солнце закрыто пеплом. Температура снаружи -45C. В бункере есть запас еды и воды на 2 года, но сломана система вентиляции и нет медикаментов.", seatsRatio: 0.5 },
-    { title: "Падение астероида", desc: "Огромный метеорит вызвал цунами и землетрясения. Поверхность разрушена. В бункере есть генератор и теплица, но утечка топлива и мало пресной воды.", seatsRatio: 0.5 },
-    { title: "Неизвестный вирус", desc: "Смертельный вирус передается по воздуху. Бункер герметичен на 1,5 года, есть лаборатория, но запасы еды рассчитаны впритык, а система очистки воздуха барахлит.", seatsRatio: 0.5 },
-    { title: "Солнечная вспышка", desc: "Вся электроника на Земле сгорела, уровень радиации зашкаливает. В бункере есть библиотека и мастерская, но нет врача и слабая психологическая изоляция.", seatsRatio: 0.5 }
-  ];
+const TRAIT_NAMES = { prof: "Профессия", bio: "Биология", health: "Здоровье", hobby: "Хобби", phobia: "Характер/Фобия", bag: "Багаж" };
 
-  var PROFS = ["Врач-хирург", "Инженер-электрик", "Агроном", "Повар", "Спасатель МЧС", "Психолог", "Слесарь-механик", "Учитель биологии", "Программист", "Строитель", "Ветеринар", "Химик-технолог", "Военный фельдшер", "Юрист", "Актер театра", "Фитнес-тренер", "Охотник-егерь", "Сварщик", "Автомеханик", "Эколог", "Бармен", "Массажист", "Архитектор", "Биолог-генетик", "Сантехник"];
-  var BIOS = ["Мужчина, 24 года", "Женщина, 22 года", "Мужчина, 35 лет", "Женщина, 29 лет", "Мужчина, 42 года", "Женщина, 38 лет", "Мужчина, 19 лет", "Женщина, 26 лет", "Мужчина, 51 год", "Женщина, 45 лет"];
-  var HEALTHS = ["Идеально здоров", "Астма (нужен ингалятор)", "Плохое зрение (-5)", "Аллергия на пыль", "Хроническая мигрень", "Больное колено", "Идеально здоров", "Повышенное давление", "Бессонница", "Здоров, но слабый иммунитет"];
-  var HOBBIES = ["Ремонт электроники", "Выращивание овощей", "Оказание первой помощи", "Игра на гитаре", "Рукопашный бой", "Шитье и ремонт одежды", "Кулинария из любых продуктов", "Знание 4 языков", "Психология и переговоры", "Сборка механизмов", "Рыбалка и охота", "Йога и медитация"];
-  var PHOBIAS = ["Клаустрофобия", "Боязнь темноты", "Вспышки агрессии", "Панический страх крови", "Подозрительность ко всем", "Лидерские замашки", "Боязнь замкнутых пространств", "Патологическая честность", "Склонность к панике", "Железное спокойствие"];
-  var BAGGAGE = ["Большая аптечка", "Набор инструментов", "Семена овощей", "Канистра спирта", "Книга по выживанию", "Настольные игры", "Фонарик и батарейки", "Запас консервов", "Радиоприемник", "Теплые спальники", "Набор ножей", "Фильтр для воды"];
+let currentRole = localStorage.getItem("bunker_role") || null;
+let myPlayerId = localStorage.getItem("bunker_pid") || null;
+let selectedAdminSlot = 1;
+let gameState = null;
+let adminPasswords = { p1: "1111", p2: "2222" };
+let sseSource = null;
+let isPushing = false;
+let localVersion = 0;
 
-  function el(id) { return document.getElementById(id); }
-  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function el(id) { return document.getElementById(id); }
+function toast(msg) {
+  const t = el("toastBox");
+  t.textContent = msg;
+  t.style.display = "block";
+  clearTimeout(window._toastT);
+  window._toastT = setTimeout(() => { t.style.display = "none"; }, 2600);
+}
 
-  function showScreen(screenId) {
-    var screens = ["screenRole", "screenLogin", "screenPlayerSelect", "screenAdmin", "screenPlayer"];
-    for (var i = 0; i < screens.length; i++) {
-      el(screens[i]).classList.add("hidden");
-    }
-    el(screenId).classList.remove("hidden");
-    if (screenId === "screenRole") {
-      el("btnExitRole").classList.add("hidden");
-    } else {
-      el("btnExitRole").classList.remove("hidden");
-    }
+// --- ПОТОКОВАЯ СИНХРОНИЗАЦИЯ (SSE) БЕЗ ЗАДЕРЖЕК ---
+function initFastSync() {
+  if (sseSource) sseSource.close();
+  try {
+    sseSource = new EventSource(DB_URL + "/gameRoom.json");
+    sseSource.onopen = () => setOnlineStatus(true);
+    sseSource.addEventListener("put", (e) => {
+      if (isPushing) return;
+      const msg = JSON.parse(e.data);
+      if (msg.path === "/") {
+        applyRemoteData(msg.data);
+      } else {
+        fetchFullState();
+      }
+      setOnlineStatus(true);
+    });
+    sseSource.addEventListener("patch", () => {
+      if (!isPushing) fetchFullState();
+    });
+    sseSource.onerror = () => {
+      setOnlineStatus(false);
+    };
+  } catch (err) {
+    setOnlineStatus(false);
+    setInterval(() => { if (!isPushing) fetchFullState(); }, 1000);
   }
+  fetchFullState();
+}
 
-  function setStatus(text, type) {
-    var st = el("connStatus");
-    st.textContent = text;
-    st.className = "status " + (type || "");
+function setOnlineStatus(ok) {
+  const pill = el("connStatus");
+  if (ok) {
+    pill.textContent = "● Мгновенная связь (SSE)";
+    pill.classList.remove("err");
+  } else {
+    pill.textContent = "● Переподключение...";
+    pill.classList.add("err");
   }
+}
 
-  function saveStateToCloud() {
-    setStatus("● Сохранение...", "");
-    fetch(DB_URL, {
+async function fetchFullState() {
+  if (isPushing) return;
+  try {
+    const res = await fetch(DB_URL + "/gameRoom.json", { cache: "no-store" });
+    const data = await res.json();
+    applyRemoteData(data);
+    setOnlineStatus(true);
+  } catch (e) {
+    setOnlineStatus(false);
+  }
+}
+
+function applyRemoteData(data) {
+  if (data && data.passwords) adminPasswords = data.passwords;
+  const remoteState = (data && data.state) ? data.state : null;
+  if (remoteState && remoteState._ver && remoteState._ver < localVersion) return;
+  if (remoteState && remoteState._ver) localVersion = remoteState._ver;
+  gameState = remoteState;
+  renderAll();
+}
+
+async function pushState(newState) {
+  isPushing = true;
+  if (newState) {
+    localVersion = Date.now();
+    newState._ver = localVersion;
+  } else {
+    localVersion = 0;
+  }
+  gameState = newState;
+  renderAll(); // Мгновенно отрисовываем у нажавшего
+  try {
+    await fetch(DB_URL + "/gameRoom/state.json", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(appState)
-    })
-    .then(function(res) {
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      setStatus("● Онлайн (Синхронизировано)", "ok");
-      renderCurrentScreen();
-    })
-    .catch(function(err) {
-      setStatus("● Ошибка сети: " + err.message, "err");
+      body: JSON.stringify(newState)
     });
+  } finally {
+    setTimeout(() => { isPushing = false; }, 300);
   }
+}
 
-  function loadStateFromCloud() {
-    fetch(DB_URL)
-    .then(function(res) {
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      return res.json();
-    })
-    .then(function(data) {
-      setStatus("● Онлайн (База подключена)", "ok");
-      if (data) {
-        if (data.passwords) appState.passwords = data.passwords;
-        appState.game = data.game || null;
-        appState.timerEnd = data.timerEnd || 0;
-      }
-      renderCurrentScreen();
-    })
-    .catch(function(err) {
-      setStatus("● Нет связи с базой", "err");
-    });
+// --- АВТОРИЗАЦИЯ ---
+function openAdminAuth(slot) {
+  selectedAdminSlot = slot;
+  el("adminPassTitle").textContent = "Пароль для Ведущего №" + slot;
+  el("adminPassBox").style.display = "block";
+  el("adminPassInput").value = "";
+  el("adminPassInput").focus();
+}
+
+function submitAdminAuth() {
+  const val = el("adminPassInput").value.trim();
+  const expected = selectedAdminSlot === 1 ? adminPasswords.p1 : adminPasswords.p2;
+  if (val === expected) {
+    currentRole = selectedAdminSlot === 1 ? "admin1" : "admin2";
+    localStorage.setItem("bunker_role", currentRole);
+    renderAll();
+  } else {
+    toast("❌ Неверный пароль");
   }
+}
 
-  function generateGame(namesList) {
-    var dis = pick(DISASTERS);
-    var seats = Math.max(1, Math.floor(namesList.length * dis.seatsRatio));
-    var players = [];
-    for (var i = 0; i < namesList.length; i++) {
-      players.push({
-        id: "p_" + i + "_" + Math.floor(Math.random() * 10000),
-        name: namesList[i],
-        alive: true,
-        stats: {
-          prof: { label: "Профессия", val: pick(PROFS), open: false },
-          bio: { label: "Биология", val: pick(BIOS), open: false },
-          health: { label: "Здоровье", val: pick(HEALTHS), open: false },
-          hobby: { label: "Хобби", val: pick(HOBBIES), open: false },
-          phobia: { label: "Характер/Фобия", val: pick(PHOBIAS), open: false },
-          baggage: { label: "Багаж", val: pick(BAGGAGE), open: false }
-        }
+async function changePasswordsPrompt() {
+  const p1 = prompt("Новый пароль для Ведущего №1:", adminPasswords.p1);
+  if (!p1) return;
+  const p2 = prompt("Новый пароль для Ведущего №2:", adminPasswords.p2);
+  if (!p2) return;
+  adminPasswords = { p1: p1.trim(), p2: p2.trim() };
+  await fetch(DB_URL + "/gameRoom/passwords.json", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(adminPasswords)
+  });
+  toast("✅ Пароли сохранены!");
+}
+
+function selectPlayerMode() {
+  currentRole = "player";
+  localStorage.setItem("bunker_role", "player");
+  renderAll();
+}
+
+function pickPlayerIdentity(pid) {
+  myPlayerId = pid;
+  localStorage.setItem("bunker_pid", pid);
+  renderAll();
+}
+
+function changeMyPlayer() {
+  myPlayerId = null;
+  localStorage.removeItem("bunker_pid");
+  renderAll();
+}
+
+function logoutRole() {
+  currentRole = null;
+  myPlayerId = null;
+  localStorage.removeItem("bunker_role");
+  localStorage.removeItem("bunker_pid");
+  el("adminPassBox").style.display = "none";
+  renderAll();
+}
+
+// --- ЛОГИКА ИГРЫ ---
+function fillPreset(n) {
+  const arr = [];
+  for (let i = 1; i <= n; i++) arr.push("Игрок " + i);
+  el("namesInput").value = arr.join("\n");
+  el("seatsInput").value = Math.floor(n / 2);
+}
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+async function createNewGame() {
+  const names = el("namesInput").value.split("\n").map(s => s.trim()).filter(Boolean);
+  if (names.length < 4) return toast("Нужно минимум 4 игрока!");
+  const seats = parseInt(el("seatsInput").value) || Math.floor(names.length / 2);
+  const disaster = pick(DISASTERS);
+  const players = names.map((name, i) => ({
+    id: "p_" + i + "_" + Math.floor(Math.random() * 1000),
+    name,
+    alive: true,
+    traits: {
+      prof: pick(PROFS),
+      bio: (Math.random() > 0.5 ? "Мужчина, " : "Женщина, ") + (Math.floor(Math.random() * 40) + 18) + " лет",
+      health: pick(HEALTHS),
+      hobby: pick(HOBBIES),
+      phobia: pick(PHOBIAS),
+      bag: pick(BAGS)
+    },
+    revealed: { prof: false, bio: false, health: false, hobby: false, phobia: false, bag: false }
+  }));
+  await pushState({ disaster, seats, timerEnd: null, players });
+  toast("🚀 Игра запущена!");
+}
+
+function resetGameConfirm() {
+  if (confirm("Завершить текущую игру?")) pushState(null);
+}
+
+function isAdmin() { return currentRole === "admin1" || currentRole === "admin2"; }
+
+function startTimer(sec) {
+  if (!gameState || !isAdmin()) return;
+  gameState.timerEnd = Date.now() + sec * 1000;
+  pushState(gameState);
+}
+
+function stopTimer() {
+  if (!gameState || !isAdmin()) return;
+  gameState.timerEnd = null;
+  pushState(gameState);
+}
+
+function toggleTrait(pid, key) {
+  if (!gameState || !isAdmin()) return;
+  const p = gameState.players.find(x => x.id === pid);
+  if (p) {
+    p.revealed[key] = !p.revealed[key];
+    pushState(gameState);
+  }
+}
+
+function toggleEliminate(pid) {
+  if (!gameState || !isAdmin()) return;
+  const p = gameState.players.find(x => x.id === pid);
+  if (p) {
+    p.alive = !p.alive;
+    if (!p.alive) Object.keys(p.revealed).forEach(k => p.revealed[k] = true);
+    pushState(gameState);
+  }
+}
+
+// --- ОТРИСОВКА ---
+function renderAll() {
+  el("screenLogin").classList.toggle("active", !currentRole);
+  el("logoutBtn").style.display = currentRole ? "inline-flex" : "none";
+
+  const isPicking = currentRole === "player" && !myPlayerId;
+  el("screenPickPlayer").classList.toggle("active", isPicking);
+
+  const inGame = Boolean(currentRole && !isPicking);
+  el("screenGame").classList.toggle("active", inGame);
+
+  if (isPicking) {
+    const list = el("playerPickList");
+    list.innerHTML = "";
+    if (!gameState || !gameState.players) {
+      el("noGameMsg").style.display = "block";
+    } else {
+      el("noGameMsg").style.display = "none";
+      gameState.players.forEach(p => {
+        const b = document.createElement("button");
+        b.className = "btn btn-block";
+        b.textContent = p.name;
+        b.onclick = () => pickPlayerIdentity(p.id);
+        list.appendChild(b);
       });
     }
-    appState.game = {
-      disasterTitle: dis.title,
-      disasterDesc: dis.desc,
-      seats: seats,
-      players: players
-    };
-    saveStateToCloud();
+    return;
   }
 
-  function renderCurrentScreen() {
-    if (currentRole === "admin1" || currentRole === "admin2") {
-      renderAdminPanel();
-    } else if (currentRole === "player") {
-      if (!myPlayerId) {
-        renderPlayerSelect();
-      } else {
-        renderPlayerGame();
-      }
-    }
+  if (!inGame) return;
+
+  el("adminSetupBox").style.display = isAdmin() ? "block" : "none";
+  el("newGameForm").style.display = (isAdmin() && !gameState) ? "block" : "none";
+  el("adminLiveControls").style.display = (isAdmin() && gameState) ? "block" : "none";
+
+  if (!gameState) {
+    el("disasterBlock").style.display = "none";
+    el("mySecretCard").style.display = "none";
+    el("playersContainer").innerHTML = '<p style="color:var(--muted); text-align:center; grid-column:1/-1; padding:24px;">Ожидание запуска игры ведущими...</p>';
+    return;
   }
 
-  function renderPlayerSelect() {
-    var listBox = el("playerSelectList");
-    listBox.innerHTML = "";
-    if (!appState.game || !appState.game.players || appState.game.players.length === 0) {
-      listBox.innerHTML = "<p style='color:#facc15;'>Ведущие еще не запустили игру. Подождите пару секунд, список появится автоматически...</p>";
-      return;
-    }
-    for (var i = 0; i < appState.game.players.length; i++) {
-      (function(p) {
-        var b = document.createElement("button");
-        b.className = "btn btn-dark";
-        b.textContent = p.name + (p.alive ? "" : " (Выбыл)");
-        b.onclick = function() {
-          myPlayerId = p.id;
-          showScreen("screenPlayer");
-          renderPlayerGame();
-        };
-        listBox.appendChild(b);
-      })(appState.game.players[i]);
-    }
-  }
+  el("disasterBlock").style.display = "block";
+  el("disasterTitle").textContent = gameState.disaster.title;
+  el("disasterDesc").textContent = gameState.disaster.desc;
+  const aliveCount = gameState.players.filter(p => p.alive).length;
+  el("bunkerMeta").textContent = "Мест в бункере: " + gameState.seats + " | Живых: " + aliveCount + " из " + gameState.players.length + " | " + gameState.disaster.bunker;
 
-  function renderAdminPanel() {
-    el("adminRoleLabel").textContent = currentRole === "admin1" ? "🛡️ Ведущий №1" : "🛡️ Ведущий №2";
-    var g = appState.game;
-    var grid = el("adminPlayersGrid");
-    grid.innerHTML = "";
-
-    if (!g) {
-      el("adminDisasterBox").innerHTML = "Партия еще не создана. Нажмите кнопку <b>«Новая игра»</b> сверху.";
-      return;
-    }
-
-    var aliveCount = 0;
-    for (var i = 0; i < g.players.length; i++) {
-      if (g.players[i].alive) aliveCount++;
-    }
-
-    el("adminDisasterBox").innerHTML =
-      "<b>Катастрофа: " + g.disasterTitle + "</b> (Мест в бункере: <b>" + g.seats + "</b> | В игре: <b>" + aliveCount + "</b>)<br>" +
-      "<span style='color:#cbd5e1;'>" + g.disasterDesc + "</span>";
-
-    var keys = ["prof", "bio", "health", "hobby", "phobia", "baggage"];
-
-    for (var pIdx = 0; pIdx < g.players.length; pIdx++) {
-      (function(p, idx) {
-        var card = document.createElement("div");
-        card.className = "p-card" + (p.alive ? "" : " dead");
-
-        var head = document.createElement("div");
-        head.className = "p-name";
-        head.innerHTML = "<span>" + (idx + 1) + ". " + p.name + "</span>";
-
-        var kickBtn = document.createElement("button");
-        kickBtn.className = p.alive ? "btn btn-red btn-sm" : "btn btn-green btn-sm";
-        kickBtn.textContent = p.alive ? "Выгнать" : "Вернуть";
-        kickBtn.onclick = function() {
-          appState.game.players[idx].alive = !appState.game.players[idx].alive;
-          saveStateToCloud();
-        };
-        head.appendChild(kickBtn);
-        card.appendChild(head);
-
-        for (var k = 0; k < keys.length; k++) {
-          (function(statKey) {
-            var st = p.stats[statKey];
-            var row = document.createElement("div");
-            row.className = "stat-row";
-
-            var info = document.createElement("div");
-            info.style.flex = "1";
-            info.innerHTML = "<span class='stat-label'>" + st.label + ":</span> <span class='stat-val'>" + st.val + "</span>";
-
-            var toggleBtn = document.createElement("button");
-            toggleBtn.className = st.open ? "btn btn-green btn-sm" : "btn btn-dark btn-sm";
-            toggleBtn.textContent = st.open ? "👁 Открыто" : "🔒 Скрыто";
-            toggleBtn.onclick = function() {
-              appState.game.players[idx].stats[statKey].open = !st.open;
-              saveStateToCloud();
-            };
-
-            row.appendChild(info);
-            row.appendChild(toggleBtn);
-            card.appendChild(row);
-          })(keys[k]);
-        }
-
-        grid.appendChild(card);
-      })(g.players[pIdx], pIdx);
-    }
-  }
-
-  function renderPlayerGame() {
-    var g = appState.game;
-    if (!g) {
-      el("playerDisasterBox").innerHTML = "Ожидание запуска новой игры ведущими...";
-      el("mySecretCardBox").innerHTML = "";
-      el("playerTableGrid").innerHTML = "";
-      return;
-    }
-
-    var aliveCount = 0;
-    var me = null;
-    for (var i = 0; i < g.players.length; i++) {
-      if (g.players[i].alive) aliveCount++;
-      if (g.players[i].id === myPlayerId) me = g.players[i];
-    }
-
-    el("playerDisasterBox").innerHTML =
-      "<b>☢️ Катастрофа: " + g.disasterTitle + "</b> | Мест в бункере: <b>" + g.seats + "</b> (Осталось игроков: <b>" + aliveCount + "</b>)<br>" +
-      "<span style='color:#cbd5e1; font-size:14px;'>" + g.disasterDesc + "</span>";
-
-    var keys = ["prof", "bio", "health", "hobby", "phobia", "baggage"];
-
-    // Личная секретная карточка
-    var secretBox = el("mySecretCardBox");
-    secretBox.innerHTML = "";
+  if (currentRole === "player" && myPlayerId) {
+    const me = gameState.players.find(p => p.id === myPlayerId);
     if (me) {
-      var myCard = document.createElement("div");
-      myCard.className = "p-card my-secret" + (me.alive ? "" : " dead");
-      myCard.innerHTML = "<div class='p-name'><span>🪪 Ваша карточка: " + me.name + (me.alive ? "" : " (ВЫ ВЫБЫЛИ)") + "</span></div>";
-      for (var k = 0; k < keys.length; k++) {
-        var st = me.stats[keys[k]];
-        var row = document.createElement("div");
-        row.className = "stat-row";
-        row.innerHTML =
-          "<span class='stat-label'>" + st.label + ":</span>" +
-          "<span class='stat-val'><b>" + st.val + "</b> " + (st.open ? "(👁 видят все)" : "(🔒 скрыто)") + "</span>";
-        myCard.appendChild(row);
-      }
-      secretBox.appendChild(myCard);
+      el("mySecretCard").style.display = "block";
+      el("myPlayerName").textContent = "Ваша карта: " + me.name;
+      el("myTraitsList").innerHTML = Object.keys(TRAIT_NAMES).map(k =>
+        '<div class="trait-row"><span style="color:var(--muted);">' + TRAIT_NAMES[k] + ':</span><strong>' + me.traits[k] + '</strong></div>'
+      ).join("");
     }
-
-    // Общий стол
-    var grid = el("playerTableGrid");
-    grid.innerHTML = "";
-    for (var pIdx = 0; pIdx < g.players.length; pIdx++) {
-      var p = g.players[pIdx];
-      var card = document.createElement("div");
-      card.className = "p-card" + (p.alive ? "" : " dead");
-      card.innerHTML = "<div class='p-name'><span>" + (pIdx + 1) + ". " + p.name + (p.alive ? "" : " ❌") + "</span></div>";
-
-      for (var k = 0; k < keys.length; k++) {
-        var st = p.stats[keys[k]];
-        var row = document.createElement("div");
-        row.className = "stat-row";
-        if (st.open) {
-          row.innerHTML = "<span class='stat-label'>" + st.label + ":</span><span class='stat-val'>" + st.val + "</span>";
-        } else {
-          row.innerHTML = "<span class='stat-label'>" + st.label + ":</span><span class='stat-val stat-hidden'>🔒 Скрыто</span>";
-        }
-        card.appendChild(row);
-      }
-      grid.appendChild(card);
-    }
+  } else {
+    el("mySecretCard").style.display = "none";
   }
 
-  // Таймер
-  setInterval(function() {
-    var left = Math.max(0, Math.ceil((appState.timerEnd - Date.now()) / 1000));
-    var mins = Math.floor(left / 60);
-    var secs = left % 60;
-    var str = (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
-    el("adminTimerDisplay").textContent = str;
-    el("playerTimerDisplay").textContent = str;
-  }, 500);
+  const sorted = [...gameState.players].sort((a, b) => (a.alive === b.alive ? 0 : a.alive ? -1 : 1));
+  el("playersContainer").innerHTML = sorted.map(p => {
+    const traitsHtml = Object.keys(TRAIT_NAMES).map(k => {
+      const open = p.revealed[k];
+      const text = (open || isAdmin()) ? p.traits[k] : '<span style="color:#475569;">Скрыто 🔒</span>';
+      const btn = isAdmin() ? '<button class="btn btn-sm" style="padding:2px 7px; background:' + (open ? '#10b981' : '#334155') + '; color:' + (open ? '#000' : '#fff') + ';" onclick="toggleTrait(\'' + p.id + '\',\'' + k + '\')">' + (open ? '👁️' : '🔒') + '</button>' : '';
+      return '<div class="trait-row"><div><span style="color:var(--muted); font-size:0.78rem;">' + TRAIT_NAMES[k] + ':</span> ' + text + '</div>' + btn + '</div>';
+    }).join("");
 
-  // Привязка кнопок
-  el("btnRolePlayer").onclick = function() {
-    currentRole = "player";
-    myPlayerId = null;
-    showScreen("screenPlayerSelect");
-    renderPlayerSelect();
-  };
+    const elimBtn = isAdmin() ? '<button class="btn btn-sm ' + (p.alive ? 'btn-red' : 'btn-green') + '" style="margin-top:10px; width:100%;" onclick="toggleEliminate(\'' + p.id + '\')">' + (p.alive ? '🚫 Выгнать' : '♻️ Вернуть') + '</button>' : '';
 
-  el("btnRoleAdmin1").onclick = function() {
-    selectedAdminSlot = "admin1";
-    el("loginTitle").textContent = "Вход: Ведущий №1";
-    el("adminPassInput").value = "";
-    showScreen("screenLogin");
-  };
+    return '<div class="p-card ' + (p.alive ? '' : 'eliminated') + '">' +
+      '<div style="display:flex; justify-content:space-between; font-weight:800; margin-bottom:8px;"><span>' + p.name + '</span><span style="color:' + (p.alive ? 'var(--green)' : 'var(--red)') + '; font-size:0.8rem;">' + (p.alive ? '● В игре' : '✖ Выбыл') + '</span></div>' +
+      traitsHtml + elimBtn + '</div>';
+  }).join("");
+}
 
-  el("btnRoleAdmin2").onclick = function() {
-    selectedAdminSlot = "admin2";
-    el("loginTitle").textContent = "Вход: Ведущий №2";
-    el("adminPassInput").value = "";
-    showScreen("screenLogin");
-  };
+setInterval(() => {
+  const disp = el("timerDisplay");
+  if (!disp) return;
+  if (!gameState || !gameState.timerEnd) { disp.textContent = "00:00"; return; }
+  const diff = Math.max(0, Math.ceil((gameState.timerEnd - Date.now()) / 1000));
+  disp.textContent = String(Math.floor(diff / 60)).padStart(2, "0") + ":" + String(diff % 60).padStart(2, "0");
+}, 250);
 
-  el("btnDoLogin").onclick = function() {
-    var val = el("adminPassInput").value.trim();
-    var correct = selectedAdminSlot === "admin1" ? appState.passwords.admin1 : appState.passwords.admin2;
-    if (val === correct) {
-      currentRole = selectedAdminSlot;
-      showScreen("screenAdmin");
-      renderAdminPanel();
-    } else {
-      alert("Неверный пароль!");
-    }
-  };
-
-  el("btnBackFromLogin").onclick = function() { showScreen("screenRole"); };
-  el("btnBackFromSelect").onclick = function() { showScreen("screenRole"); };
-  el("btnExitRole").onclick = function() {
-    currentRole = null;
-    myPlayerId = null;
-    showScreen("screenRole");
-  };
-
-  el("btnTogglePassBox").onclick = function() { el("passBox").classList.toggle("hidden"); };
-  el("btnToggleSetup").onclick = function() { el("setupBox").classList.toggle("hidden"); };
-
-  el("btnSavePasswords").onclick = function() {
-    var p1 = el("newPass1").value.trim();
-    var p2 = el("newPass2").value.trim();
-    if (p1) appState.passwords.admin1 = p1;
-    if (p2) appState.passwords.admin2 = p2;
-    el("passBox").classList.add("hidden");
-    saveStateToCloud();
-    alert("Пароли обновлены!");
-  };
-
-  function fillNames(count) {
-    var arr = [];
-    for (var i = 1; i <= count; i++) arr.push("Игрок " + i);
-    el("namesInput").value = arr.join("\n");
-  }
-
-  el("btnFill15").onclick = function() { fillNames(15); };
-  el("btnFill20").onclick = function() { fillNames(20); };
-  el("btnFill25").onclick = function() { fillNames(25); };
-
-  el("btnStartNewGame").onclick = function() {
-    var raw = el("namesInput").value.split("\n");
-    var names = [];
-    for (var i = 0; i < raw.length; i++) {
-      var n = raw[i].trim();
-      if (n) names.push(n);
-    }
-    if (names.length < 4) {
-      alert("Введите минимум 4 имени игроков!");
-      return;
-    }
-    el("setupBox").classList.add("hidden");
-    generateGame(names);
-  };
-
-  el("btnTimer30").onclick = function() {
-    appState.timerEnd = Date.now() + 30000;
-    saveStateToCloud();
-  };
-
-  el("btnTimer180").onclick = function() {
-    appState.timerEnd = Date.now() + 180000;
-    saveStateToCloud();
-  };
-
-  el("btnTimerStop").onclick = function() {
-    appState.timerEnd = 0;
-    saveStateToCloud();
-  };
-
-  el("btnRevealAllProf").onclick = function() {
-    if (!appState.game) return;
-    for (var i = 0; i < appState.game.players.length; i++) {
-      appState.game.players[i].stats.prof.open = true;
-    }
-    saveStateToCloud();
-  };
-
-  // Автообновление каждые 2.5 секунды
-  loadStateFromCloud();
-  setInterval(loadStateFromCloud, 2500);
-})();
+initFastSync();
 </script>
 </body>
 </html>
