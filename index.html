@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>БУНКЕР LIVE v3.3</title>
+<title>БУНКЕР LIVE v3.4</title>
 <style>
   :root {
     --bg: #0b0f17;
@@ -66,6 +66,18 @@
   .disaster-banner { width: 100%; height: 155px; background-size: cover; background-position: center; border-bottom: 1px solid var(--card-border); }
   .disaster-content { padding: 16px; }
 
+  /* Финал игры */
+  .final-box {
+    background: linear-gradient(145deg, rgba(6, 78, 59, 0.96), rgba(15, 23, 42, 0.98));
+    border: 2px solid var(--green);
+    border-radius: 18px;
+    padding: 20px;
+    margin-bottom: 18px;
+    box-shadow: 0 12px 32px rgba(16, 185, 129, 0.25);
+  }
+  .final-box h2 { color: var(--green); font-size: 1.4rem; margin-bottom: 8px; }
+  .verdict-text { background: rgba(0,0,0,0.38); padding: 14px; border-radius: 12px; line-height: 1.55; font-size: 0.94rem; margin: 12px 0; border-left: 4px solid var(--accent); color: #f8fafc; }
+
   .round-banner {
     background: linear-gradient(90deg, rgba(245, 158, 11, 0.22) 0%, rgba(59, 130, 246, 0.22) 100%);
     backdrop-filter: blur(8px);
@@ -85,6 +97,8 @@
   .my-card { border: 2px solid var(--blue); background: rgba(19, 28, 46, 0.95); }
   .trait-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed rgba(255,255,255,0.08); gap: 8px; font-size: 0.9rem; }
   .trait-row:last-child { border-bottom: none; }
+  .spec-box { background: rgba(245, 158, 11, 0.14); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 12px; margin-top: 12px; }
+
   .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(275px, 1fr)); gap: 12px; }
   .p-card { background: var(--card); backdrop-filter: blur(6px); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; }
   .p-card.eliminated { opacity: 0.45; border-color: var(--red); }
@@ -110,7 +124,7 @@
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v3.3</span></div>
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v3.4</span></div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button class="btn btn-sm" onclick="downloadSelfFile()">💾 Скачать файл</button>
       <span id="connStatus" class="status-pill">● Подключение...</span>
@@ -196,6 +210,14 @@
       </div>
     </div>
 
+    <!-- ФИНАЛ ИГРЫ: ЗАКРЫТИЕ ДВЕРЕЙ БУНКЕРА -->
+    <div id="finalOverlay" class="final-box" style="display:none;">
+      <h2>🚪 Двери бункера герметично закрыты!</h2>
+      <p id="finalSurvivorsList" style="font-weight:700; color:#fff; font-size:1.05rem; margin-bottom:6px;"></p>
+      <div id="finalVerdict" class="verdict-text"></div>
+      <p style="font-size:0.82rem; color:#a7f3d0;">* Ведущие могут зачитать этот итог вслух для всей группы и завершить партию.</p>
+    </div>
+
     <!-- КАРТОЧКА ПРОИСШЕСТВИЯ -->
     <div id="disasterBlock" class="card-box disaster-card" style="display:none;">
       <div id="disasterBannerBox" class="disaster-banner"></div>
@@ -206,7 +228,7 @@
       </div>
     </div>
 
-    <!-- ЛИЧНАЯ КАРТОЧКА ИГРОКА -->
+    <!-- ЛИЧНАЯ КАРТОЧКА ИГРОКА + СПЕЦКАРТА -->
     <div id="mySecretCard" class="card-box my-card" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:8px; flex-wrap:wrap;">
         <h3 id="myPlayerName" style="color:var(--blue);"></h3>
@@ -214,9 +236,14 @@
       </div>
       <p style="font-size:0.8rem; color:#93c5fd; margin-bottom:8px;">Эти данные видите <b>только вы</b>. Нажимайте <b>«👁️ Открыть всем»</b> поэтапно в каждом раунде, чтобы показать выбранную характеристику остальным:</p>
       <div id="myTraitsList"></div>
+      <div class="spec-box">
+        <div style="font-size:0.78rem; color:var(--accent); font-weight:800; text-transform:uppercase; margin-bottom:4px;">⚡ Ваша секретная спецкарта действия</div>
+        <div id="mySpecText" style="font-size:0.92rem; margin-bottom:8px; line-height:1.4;"></div>
+        <button id="useSpecBtn" class="btn btn-sm btn-primary" onclick="activateSpecCard()">⚡ Активировать спецкарту</button>
+      </div>
     </div>
 
-    <!-- ПАНЕЛЬ ГОЛОСОВАНИЯ СО СВОДКОЙ ВСЕХ РАСКРЫТЫХ ХАРАКТЕРИСТИК -->
+    <!-- ПАНЕЛЬ ГОЛОСОВАНИЯ -->
     <div id="votingBlock" class="vote-panel" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
         <h3 style="color:var(--accent);">🗳️ Голосование: Кого НЕ пустим в бункер?</h3>
@@ -270,11 +297,103 @@ function getDisasterArt(d) {
   return ART_NUCLEAR;
 }
 
-const PROFS = new Array("Врач-хирург", "Инженер-электрик", "Агроном", "Повар-технолог", "Слесарь-сантехник", "Психолог", "Строитель", "Биохимик", "Охотник", "Спасатель МЧС", "Ветеринар", "Сварщик", "Учитель", "Программист", "Автомеханик", "Стендап-комик", "Переводчик", "Юрист", "Блогер", "Фитнес-тренер");
-const HEALTHS = new Array("Идеально здоров", "Лёгкая астма", "Близорукость -4.5", "Аллергия на пыль", "Гастрит", "Гипертония", "Плоскостопие", "Диабет 2-го типа", "Бессонница", "Носитель универсальной крови 0-");
-const HOBBIES = new Array("Радиолюбитель", "Игра на гитаре", "Самогоноварение", "Бокс (КМС)", "Шитьё и ремонт", "Настольные игры", "Травничество", "Стрельба из лука", "Пчеловодство", "Кулинарная выпечка");
-const PHOBIAS = new Array("Клаустрофобия", "Арахнофобия", "Гемофобия (боязнь крови)", "Лидерские замашки", "Перфекционист", "Подозрительность", "Вспыльчивость", "Интроверт", "Клептомания", "Гипер-оптимист");
-const BAGS = new Array("Полевая аптечка", "Набор инструментов", "Семена овощей", "Ящик тушёнки", "Канистра спирта 20л", "Солнечная панель и фонари", "Фильтр для воды", "Настольные игры и книги", "Охотничье ружьё", "Сварочный аппарат");
+const PROFS = new Array(
+  "Врач-хирург (опыт 12 лет, полевая медицина и травматология)",
+  "Инженер-электрик (ремонт генераторов, проводки и систем питания)",
+  "Агроном-селекционер (выращивание овощей и злаков в закрытом грунте)",
+  "Повар-технолог (приготовление еды из любых запасов без потерь)",
+  "Слесарь-сантехник (ремонт труб, дренажных насосов и вентиляции)",
+  "Психолог-кризисолог (снятие паники и разрешение конфликтов в изоляции)",
+  "Строитель-проектировщик (укрепление стен, герметизация отсеков)",
+  "Биохимик-фармацевт (синтез антисептиков, лекарств и очистка воды)",
+  "Охотник-промысловик (выживание в дикой природе и добыча пищи)",
+  "Военный спасатель МЧС (первая помощь, разбор завалов и эвакуация)",
+  "Ветеринар-зоотехник (лечение животных и оказание помощи людям)",
+  "Сварщик 6-го разряда (ремонт герметичных дверей и металлоконструкций)",
+  "Учитель истории и обществознания (обучение нового поколения после выхода)",
+  "Программист-системщик (настройка автоматики и датчиков бункера)",
+  "Автомеханик-дизелист (обслуживание и переборка дизель-генераторов)",
+  "Стендап-комик и ведущий (поддержка морального духа и разрядка обстановки)",
+  "Филолог-переводчик (знает английский, китайский, немецкий и арабский)",
+  "Юрист по гражданскому праву (составление устава и законов новой общины)",
+  "Блогер-миллионник (умеет убеждать людей и вести сложные переговоры)",
+  "Фитнес-тренер (поддержание физической формы команды в замкнутом пространстве)",
+  "Лесник-лесопатолог (знает съедобные растения, грибы и восстановление леса)",
+  "Стоматолог-терапевт (лечение острой зубной боли в полевых условиях)"
+);
+
+const HEALTHS = new Array(
+  "Идеально здоров (100% иммунитет, высокая выносливость)",
+  "Идеально здоров (отличное зрение и крепкая нервная система)",
+  "Бронхиальная астма (лёгкая форма, нужен ингалятор раз в неделю)",
+  "Близорукость -4.5 (без очков или линз видит только размытые силуэты)",
+  "Аллергия на пыль и плесень (постоянный насморк в сырых помещениях)",
+  "Хронический гастрит (не может есть острую и грубую пищу без боли)",
+  "Гипертония 2-й степени (скачки давления при сильном стрессе)",
+  "Плоскостопие и боли в пояснице (не может таскать тяжести свыше 15 кг)",
+  "Сахарный диабет 2-го типа (нужна строгая диета с контролем углеводов)",
+  "Хроническая бессонница (спит по 3–4 часа в сутки, чутко слышит шорохи)",
+  "Глухота на левое ухо (плохо разбирает речь в шумной обстановке)",
+  "Полностью здоров, носитель редкой универсальной группы крови (0-)",
+  "Мигрени при смене давления (раз в месяц выпадает из работы на день)"
+);
+
+const HOBBIES = new Array(
+  "Радиолюбитель (может собрать рацию и антенну из подручных деталей)",
+  "Игра на акустической гитаре и пение (снимает напряжение в коллективе)",
+  "Самогоноварение и дистилляция (получение чистого спирта для медицины)",
+  "Рукопашный бой и бокс (разряд КМС, защита периметра бункера)",
+  "Шитьё и ремонт одежды (починка снаряжения, фильтров и спецкостюмов)",
+  "Настольные игры и шахматы (организация досуга команды на 2 года)",
+  "Травничество и фитотерапия (приготовление лечебных отваров)",
+  "Стрельба из лука и арбалета (бесшумная охота без расхода патронов)",
+  "Пчеловодство и разведение кроликов (создание фермы после выхода)",
+  "Слесарное дело и заточка любых режущих инструментов",
+  "Кулинарная выпечка (умеет печь хлеб даже из базовой муки и воды)",
+  "Картография и ориентирование на местности без GPS и связи"
+);
+
+const PHOBIAS = new Array(
+  "Клаустрофобия (панические атаки в тесных тёмных помещениях)",
+  "Арахнофобия (панически боится пауков и любых насекомых)",
+  "Гемофобия (теряет сознание при виде открытой крови)",
+  "Лидерские замашки (стремится командовать всеми, не терпит критики)",
+  "Патологический перфекционист (требует стерильного порядка и чистоты)",
+  "Подозрительность (вечно ищет предателей и заговоры внутри группы)",
+  "Вспыльчивость (быстро заводится в споре, но через 5 минут отходит)",
+  "Молчаливый интроверт (не лезет в конфликты, делает свою работу тихо)",
+  "Клептомания (иногда прячет мелкие полезные вещи про запас)",
+  "Никтофобия (боится полной темноты, спит только при дежурном свете)",
+  "Гипер-оптимист (шутит и подбадривает даже в безнадёжных ситуациях)",
+  "Упрямство (если принял решение, переубедить почти невозможно)"
+);
+
+const BAGS = new Array(
+  "Расширенная полевая аптечка (антибиотики, жгуты, обезболивающее)",
+  "Набор профессиональных слесарных и электроинструментов",
+  "Герметичный контейнер с семенами 20 овощных и злаковых культур",
+  "Ящик армейских сухпайков и тушёнки (запас на 1 месяц)",
+  "Канистра чистого медицинского спирта (20 литров)",
+  "Два мощных аккумуляторных фонаря и складная солнечная панель",
+  "Фильтр-кувшин для очистки воды со сменными угольными картриджами",
+  "Коробка настольных игр, колода карт и 10 книг по выживанию",
+  "Охотничье ружьё 12-го калибра и 30 патронов",
+  "Сварочный инвертор и пачка электродов",
+  "Акустическая гитара с запасным комплектом струн",
+  "Рация дальнего действия с запасными аккумуляторами",
+  "Дозиметр радиации и два комплекта химзащиты (ОЗК)",
+  "Топор, двуручная пила и моток альпинистской верёвки (50 м)"
+);
+
+const SPEC_CARDS = new Array(
+  "💉 «Чудо-вакцина»: Вылечить любого игрока (включая себя) от его болезни/недуга (объявляется ведущим).",
+  "🔄 «Карьерный поворот»: Поменяться профессией с любым другим игроком за столом.",
+  "🛡️ «Дипломатический иммунитет»: Защитить себя или любого игрока от вылета на текущем голосовании.",
+  "🔍 «Детектор лжи»: Заставить любого игрока немедленно открыть его Здоровье или Фобию.",
+  "🎒 «Конфискация»: Забрать себе багаж любого игрока (а свой отдать ему).",
+  "⚖️ «Двойной голос»: На текущем голосовании ваш голос засчитывается за два (сообщите ведущим).",
+  "🎲 «Второй шанс»: Полностью перегенерировать себе Хобби и Характер/Фобию."
+);
 
 const TRAIT_NAMES = { prof: "Профессия", bio: "Биология", health: "Здоровье", hobby: "Хобби", phobia: "Характер/Фобия", bag: "Багаж" };
 
@@ -302,7 +421,7 @@ function toast(msg) {
   t.textContent = msg;
   t.style.display = "block";
   clearTimeout(window._toastT);
-  window._toastT = setTimeout(() => { t.style.display = "none"; }, 3500);
+  window._toastT = setTimeout(() => { t.style.display = "none"; }, 3800);
 }
 
 function downloadSelfFile() {
@@ -502,6 +621,13 @@ function fillPreset(n) {
 
 function pick(arr) { return arr.at(Math.floor(Math.random() * arr.length)); }
 
+function generateBio() {
+  const sex = Math.random() > 0.5 ? "Мужчина" : "Женщина";
+  const age = Math.floor(Math.random() * 42) + 18;
+  const cf = Math.random() < 0.15 ? " (Чайлдфри)" : "";
+  return sex + ", " + age + " лет" + cf;
+}
+
 async function createNewGame() {
   const names = el("namesInput").value.split("\n").map(s => s.trim()).filter(Boolean);
   if (names.length < 4) return toast("Нужно минимум 4 игрока!");
@@ -515,7 +641,7 @@ async function createNewGame() {
     claimedBy: null,
     traits: {
       prof: pick(PROFS),
-      bio: (Math.random() > 0.5 ? "Мужчина, " : "Женщина, ") + (Math.floor(Math.random() * 40) + 18) + " лет",
+      bio: generateBio(),
       health: pick(HEALTHS),
       hobby: pick(HOBBIES),
       phobia: pick(PHOBIAS),
@@ -528,7 +654,9 @@ async function createNewGame() {
       hobby: false,
       phobia: false,
       bag: false
-    }
+    },
+    specCard: pick(SPEC_CARDS),
+    specUsed: false
   }));
   await pushState({
     gameId: newGameId,
@@ -591,6 +719,17 @@ function revealMyTrait(key) {
   }
 }
 
+function activateSpecCard() {
+  if (!gameState || !myPlayerId) return;
+  const me = gameState.players.find(x => x.id === myPlayerId);
+  if (!me || me.specUsed) return;
+  if (confirm("Активировать вашу спецкарту? Все игроки и ведущие увидят это действие.")) {
+    me.specUsed = true;
+    gameState.announcement = "⚡ Игрок " + me.name + " применил спецкарту: " + me.specCard;
+    pushState(gameState);
+  }
+}
+
 function toggleEliminate(pid) {
   if (!gameState || !isAdmin()) return;
   const p = gameState.players.find(x => x.id === pid);
@@ -601,7 +740,6 @@ function toggleEliminate(pid) {
   }
 }
 
-// Подсчёт результатов голосования и мгновенное исключение лидера
 function finishVotingAndEliminate(stateObj, isAuto) {
   const alive = stateObj.players.filter(p => p.alive);
   const votesMap = stateObj.votes || {};
@@ -627,8 +765,14 @@ function finishVotingAndEliminate(stateObj, isAuto) {
     victim.alive = false;
     Object.keys(TRAIT_NAMES).forEach(k => victim.revealed[k] = true);
     stateObj.votingOpen = false;
-    stateObj.roundName = "Итог голосования: " + victim.name + " выбывает из игры!";
-    stateObj.announcement = "🚫 По итогам голосования (" + maxVotes + " гол.) вылетает: " + victim.name + "!";
+    const leftCount = stateObj.players.filter(p => p.alive).length;
+    if (leftCount <= stateObj.seats) {
+      stateObj.roundName = "ФИНАЛ: Двери бункера закрыты!";
+      stateObj.announcement = "🚪 Места заполнены! В бункер прошли " + leftCount + " чел.";
+    } else {
+      stateObj.roundName = "Итог голосования: " + victim.name + " выбывает из игры!";
+      stateObj.announcement = "🚫 По итогам голосования (" + maxVotes + " гол.) вылетает: " + victim.name + "!";
+    }
   } else {
     const tieNames = leaders.map(x => x.name).join(", ");
     if (isAuto) {
@@ -661,7 +805,6 @@ function castVote(targetId) {
   if (!gameState.votes) gameState.votes = {};
   gameState.votes[myPlayerId] = targetId;
 
-  // Проверяем, проголосовали ли все живые игроки — если да, вылет срабатывает мгновенно
   const alivePlayers = gameState.players.filter(p => p.alive);
   const votedAliveCount = alivePlayers.filter(p => Boolean(gameState.votes[p.id])).length;
   if (votedAliveCount >= alivePlayers.length) {
@@ -670,6 +813,38 @@ function castVote(targetId) {
 
   pushState(gameState);
   toast("✅ Ваш голос учтён!");
+}
+
+// Автоматический анализ шансов выживания в финале
+function buildFinalVerdict(survivors) {
+  const textAll = survivors.map(p => p.traits.prof + " " + p.traits.health + " " + p.traits.bag).join(" ").toLowerCase();
+  const hasDoc = textAll.includes("врач") || textAll.includes("хирург") || textAll.includes("стоматолог") || textAll.includes("спасатель") || textAll.includes("аптечка");
+  const hasEng = textAll.includes("инженер") || textAll.includes("электрик") || textAll.includes("слесарь") || textAll.includes("механик") || textAll.includes("инструмент") || textAll.includes("сварщик");
+  const hasFood = textAll.includes("агроном") || textAll.includes("повар") || textAll.includes("семена") || textAll.includes("сухпай") || textAll.includes("лесник");
+  const hasWomen = survivors.some(p => p.traits.bio.startsWith("Женщина") && !p.traits.bio.includes("Чайлдфри"));
+  const hasMen = survivors.some(p => p.traits.bio.startsWith("Мужчина") && !p.traits.bio.includes("Чайлдфри"));
+
+  let score = 0;
+  const notes = new Array();
+  if (hasDoc) { score++; notes.push("✅ Медицина обеспечена — команда справится с травмами и инфекциями."); }
+  else { notes.push("⚠️ Нет врача и медикаментов — любая серьёзная травма или инфекция станет критической."); }
+
+  if (hasEng) { score++; notes.push("✅ Есть технические специалисты — генератор, вентиляция и шлюз бункера под контролем."); }
+  else { notes.push("⚠️ Нет инженеров и ремонтников — поломка систем жизнеобеспечения приведёт к аварии."); }
+
+  if (hasFood) { score++; notes.push("✅ Продумано продовольствие — запасов и навыков хватит на весь срок изоляции."); }
+  else { notes.push("⚠️ Нет специалистов по еде и агрономии — группе грозит острый дефицит провизии."); }
+
+  if (hasWomen && hasMen) { score++; notes.push("✅ Есть потенциал для возрождения человечества после выхода на поверхность."); }
+  else { notes.push("⚠️ Однополый или нефертильный состав — продолжение рода после выхода под вопросом."); }
+
+  const summary = score >= 3
+    ? "🏆 ИТОГ: Блестящий отбор! Команда полностью автономна, переживёт изоляцию и сможет восстановить жизнь снаружи."
+    : score === 2
+    ? "⚖️ ИТОГ: Шансы 50 на 50. Выжить внутри бункера удастся, но придётся столкнуться с тяжёлыми кризисами."
+    : "💀 ИТОГ: Критический дисбаланс состава. В бункере будет весело, но без ключевых специалистов команда вряд ли дотянет до открытия дверей.";
+
+  return summary + "<br><br>" + notes.join("<br>");
 }
 
 function validatePlayerSession() {
@@ -752,6 +927,7 @@ function renderAll() {
     el("mySecretCard").style.display = "none";
     el("votingBlock").style.display = "none";
     el("roundBanner").style.display = "none";
+    el("finalOverlay").style.display = "none";
     el("playersContainer").innerHTML = '<p style="color:var(--muted); text-align:center; grid-column:1/-1; padding:24px;">Ожидание запуска игры ведущими...</p>';
     return;
   }
@@ -761,112 +937,116 @@ function renderAll() {
     toast(gameState.announcement);
   }
 
+  const alivePlayers = gameState.players.filter(p => p.alive);
+
+  // Финал игры при заполнении мест в бункере
+  if (alivePlayers.length <= gameState.seats) {
+    el("finalOverlay").style.display = "block";
+    el("finalSurvivorsList").textContent = "В бункер попали (" + alivePlayers.length + " из " + gameState.seats + " мест): " + alivePlayers.map(p => p.name).join(", ");
+    el("finalVerdict").innerHTML = buildFinalVerdict(alivePlayers);
+  } else {
+    el("finalOverlay").style.display = "none";
+  }
+
   el("roundBanner").style.display = "flex";
   el("roundTitleText").textContent = gameState.roundName || "Подготовка: Изучение своих карточек";
-
-  if (isAdmin()) {
-    if (el("roundSelect") && gameState.roundName) {
-      el("roundSelect").value = gameState.roundName;
-    }
-    el("toggleVoteBtn").textContent = gameState.votingOpen ? "🛑 Завершить голосование и выгнать лидера" : "🗳️ Открыть голосование (со сводкой карт)";
-    el("toggleVoteBtn").className = gameState.votingOpen ? "btn btn-red btn-block" : "btn btn-primary btn-block";
-  }
-
-  el("disasterBlock").style.display = "block";
-  el("disasterTitle").textContent = gameState.disaster.title;
-  el("disasterDesc").textContent = gameState.disaster.desc;
-  const alivePlayers = gameState.players.filter(p => p.alive);
-  el("bunkerMeta").textContent = "Мест в бункере: " + gameState.seats + " | Живых: " + alivePlayers.length + " из " + gameState.players.length + " | " + gameState.disaster.bunker;
-
-  if (currentRole === "player" && myPlayerId) {
-    const me = gameState.players.find(p => p.id === myPlayerId);
-    if (me) {
-      el("mySecretCard").style.display = "block";
-      el("myPlayerName").textContent = "Ваша карта: " + me.name + (me.alive ? "" : " (Выбыл)");
-      const rev = me.revealed || {};
-      el("myTraitsList").innerHTML = Object.keys(TRAIT_NAMES).map(k => {
-        const isOpen = rev[k] === true;
-        const btn = isOpen
-          ? '<span style="color:var(--green); font-size:0.78rem; font-weight:700;">✅ Открыто всем</span>'
-          : (me.alive ? '<button class="btn btn-sm btn-blue" onclick="revealMyTrait(\'' + k + '\')">👁️ Открыть всем</button>' : '<span style="color:var(--muted); font-size:0.78rem;">🔒 Не открыто</span>');
-        return '<div class="trait-row"><div><span style="color:var(--muted); font-size:0.8rem;">' + TRAIT_NAMES[k] + ':</span> <strong>' + me.traits[k] + '</strong></div>' + btn + '</div>';
-      }).join("");
-    }
-  } else {
-    el("mySecretCard").style.display = "none";
-  }
-
-  if (gameState.votingOpen) {
-    el("votingBlock").style.display = "block";
-    const votesMap = gameState.votes || {};
-    const totalVotes = Object.keys(votesMap).length;
-    el("voteProgress").textContent = "Проголосовало: " + totalVotes + " из " + alivePlayers.length;
-
-    const counts = {};
-    alivePlayers.forEach(p => counts[p.id] = 0);
-    Object.values(votesMap).forEach(tid => { if (counts[tid] !== undefined) counts[tid]++; });
-    const maxVotes = Math.max(0, ...Object.values(counts));
-
-    const myVote = myPlayerId ? votesMap[myPlayerId] : null;
-    el("voteCandidatesList").innerHTML = alivePlayers.map(cand => {
-      const rev = cand.revealed || {};
-      const openChips = Object.keys(TRAIT_NAMES)
-        .filter(k => rev[k] === true)
-        .map(k => '<span class="trait-chip"><strong>' + TRAIT_NAMES[k] + ':</strong> ' + cand.traits[k] + '</span>')
-        .join("");
-      const pct = totalVotes > 0 ? Math.round((counts[cand.id] / totalVotes) * 100) : 0;
-      const isMyChoice = myVote === cand.id;
-      const isLeader = maxVotes > 0 && counts[cand.id] === maxVotes;
-      const voteBtn = (currentRole === "player" && cand.id !== myPlayerId)
-        ? '<button class="btn btn-sm ' + (isMyChoice ? 'btn-green' : 'btn-red') + '" onclick="castVote(\'' + cand.id + '\')">' + (isMyChoice ? '✅ Ваш голос' : 'Против') + '</button>'
-        : '';
-
-      return '<div class="vote-item ' + (isLeader ? 'leader' : '') + '" style="' + (isMyChoice ? 'border-color:var(--green);' : '') + '">' +
-        '<div class="vote-item-head"><strong>' + cand.name + ' <span style="color:var(--accent);">(' + counts[cand.id] + ' гол. / ' + pct + '%)</span>' + (isLeader ? ' <span style="color:var(--red); font-size:0.78rem;">🔥 Лидер на вылет</span>' : '') + '</strong>' + voteBtn + '</div>' +
-        '<div class="vote-open-traits">' + (openChips || '<span style="color:var(--muted);">Пока не открыто ни одной характеристики</span>') + '</div>' +
-        '<div class="vote-bar-bg"><div class="vote-bar-fill" style="width:' + pct + '%;"></div></div>' +
-        '</div>';
-    }).join("");
-  } else {
-    el("votingBlock").style.display = "none";
-  }
-
-  const sorted = gameState.players.slice().sort((a, b) => (a.alive === b.alive ? 0 : a.alive ? -1 : 1));
-  el("playersContainer").innerHTML = sorted.map(p => {
-    const rev = p.revealed || {};
-    const traitsHtml = Object.keys(TRAIT_NAMES).map(k => {
-      const open = rev[k] === true;
-      const text = (open || isAdmin()) ? p.traits[k] : '<span style="color:#475569;">Скрыто 🔒</span>';
-      const btn = isAdmin() ? '<button class="btn btn-sm" style="padding:2px 7px; background:' + (open ? '#10b981' : '#334155') + '; color:' + (open ? '#000' : '#fff') + ';" onclick="toggleTrait(\'' + p.id + '\',\'' + k + '\')">' + (open ? '👁️' : '🔒') + '</button>' : '';
-      return '<div class="trait-row"><div><span style="color:var(--muted); font-size:0.78rem;">' + TRAIT_NAMES[k] + ':</span> ' + text + '</div>' + btn + '</div>';
-    }).join("");
-
-    const lockBadge = p.claimedBy ? '<span style="color:var(--blue); font-size:0.75rem;">📱 Занята</span>' : '<span style="color:var(--muted); font-size:0.75rem;">Свободна</span>';
-    const unlockBtn = (isAdmin() && p.claimedBy) ? '<button class="btn btn-sm" style="margin-top:6px; width:100%;" onclick="adminUnlockSlot(\'' + p.id + '\')">🔓 Освободить слот</button>' : '';
-    const elimBtn = isAdmin() ? '<button class="btn btn-sm ' + (p.alive ? 'btn-red' : 'btn-green') + '" style="margin-top:6px; width:100%;" onclick="toggleEliminate(\'' + p.id + '\')">' + (p.alive ? '🚫 Выгнать' : '♻️ Вернуть') + '</button>' : '';
-
-    return '<div class="p-card ' + (p.alive ? '' : 'eliminated') + '">' +
-      '<div style="display:flex; justify-content:space-between; align-items:center; font-weight:800; margin-bottom:8px;"><span>' + p.name + '</span><div style="display:flex; gap:6px; align-items:center;">' + lockBadge + '<span style="color:' + (p.alive ? 'var(--green)' : 'var(--red)') + '; font-size:0.8rem;">' + (p.alive ? '● В игре' : '✖ Выбыл') + '</span></div></div>' +
-      traitsHtml + unlockBtn + elimBtn + '</div>';
-  }).join("");
+if (isAdmin()) {
+if (el("roundSelect") && gameState.roundName) {
+el("roundSelect").value = gameState.roundName;
 }
-
+el("toggleVoteBtn").textContent = gameState.votingOpen ? "🛑 Завершить голосование и выгнать лидера" : "🗳️ Открыть голосование (со сводкой карт)";
+el("toggleVoteBtn").className = gameState.votingOpen ? "btn btn-red btn-block" : "btn btn-primary btn-block";
+}
+el("disasterBlock").style.display = "block";
+el("disasterTitle").textContent = gameState.disaster.title;
+el("disasterDesc").textContent = gameState.disaster.desc;
+el("bunkerMeta").textContent = "Мест в бункере: " + gameState.seats + " | Живых: " + alivePlayers.length + " из " + gameState.players.length + " | " + gameState.disaster.bunker;
+if (currentRole === "player" && myPlayerId) {
+const me = gameState.players.find(p => p.id === myPlayerId);
+if (me) {
+el("mySecretCard").style.display = "block";
+el("myPlayerName").textContent = "Ваша карта: " + me.name + (me.alive ? "" : " (Выбыл)");
+const rev = me.revealed || {};
+el("myTraitsList").innerHTML = Object.keys(TRAIT_NAMES).map(k => {
+const isOpen = rev[k] === true;
+const btn = isOpen
+? '✅ Открыто всем'
+: (me.alive ? '👁️ Открыть всем' : '🔒 Не открыто');
+return '' + TRAIT_NAMES[k] + ': ' + me.traits[k] + '' + btn + '';
+}).join("");
+el("mySpecText").textContent = me.specCard || "Спецкарта не назначена";
+const specBtn = el("useSpecBtn");
+if (me.specUsed) {
+specBtn.textContent = "✅ Спецкарта уже использована";
+specBtn.disabled = true;
+} else if (!me.alive) {
+specBtn.textContent = "🚫 Недоступно (вы выбыли)";
+specBtn.disabled = true;
+} else {
+specBtn.textContent = "⚡ Активировать спецкарту";
+specBtn.disabled = false;
+}}
+} else {
+el("mySecretCard").style.display = "none";
+}
+if (gameState.votingOpen) {
+el("votingBlock").style.display = "block";
+const votesMap = gameState.votes || {};
+const totalVotes = Object.keys(votesMap).length;
+el("voteProgress").textContent = "Проголосовало: " + totalVotes + " из " + alivePlayers.length;
+const counts = {};
+alivePlayers.forEach(p => counts[p.id] = 0);
+Object.values(votesMap).forEach(tid => { if (counts[tid] !== undefined) counts[tid]++; });
+const maxVotes = Math.max(0, ...Object.values(counts));
+const myVote = myPlayerId ? votesMap[myPlayerId] : null;
+el("voteCandidatesList").innerHTML = alivePlayers.map(cand => {
+const rev = cand.revealed || {};
+const openChips = Object.keys(TRAIT_NAMES)
+.filter(k => rev[k] === true)
+.map(k => '' + TRAIT_NAMES[k] + ': ' + cand.traits[k] + '')
+.join("");
+const pct = totalVotes > 0 ? Math.round((counts[cand.id] / totalVotes) * 100) : 0;
+const isMyChoice = myVote === cand.id;
+const isLeader = maxVotes > 0 && counts[cand.id] === maxVotes;
+const voteBtn = (currentRole === "player" && cand.id !== myPlayerId)
+? '' + (isMyChoice ? '✅ Ваш голос' : 'Против') + ''
+: '';
+return '<div class="vote-item ' + (isLeader ? 'leader' : '') + '" style="' + (isMyChoice ? 'border-color:var(--green);' : '') + '">' +
+'<div class="vote-item-head"><strong>' + cand.name + ' <span style="color:var(--accent);">(' + counts[cand.id] + ' гол. / ' + pct + '%)</span>' + (isLeader ? ' <span style="color:var(--red); font-size:0.78rem;">🔥 Лидер на вылет</span>' : '') + '</strong>' + voteBtn + '</div>' +
+'<div class="vote-open-traits">' + (openChips || '<span style="color:var(--muted);">Пока не открыто ни одной характеристики</span>') + '</div>' +
+'<div class="vote-bar-bg"><div class="vote-bar-fill" style="width:' + pct + '%;"></div></div>' +
+'</div>';}).join("");
+} else {
+el("votingBlock").style.display = "none";
+}
+const sorted = gameState.players.slice().sort((a, b) => (a.alive === b.alive ? 0 : a.alive ? -1 : 1));
+el("playersContainer").innerHTML = sorted.map(p => {
+const rev = p.revealed || {};
+const traitsHtml = Object.keys(TRAIT_NAMES).map(k => {
+const open = rev[k] === true;
+const text = (open || isAdmin()) ? p.traits[k] : 'Скрыто 🔒';
+const btn = isAdmin() ? '' + (open ? '👁️' : '🔒') + '' : '';
+return '' + TRAIT_NAMES[k] + ': ' + text + '' + btn + '';
+}).join("");
+const lockBadge = p.claimedBy ? '📱 Занята' : 'Свободна';
+const unlockBtn = (isAdmin() && p.claimedBy) ? '🔓 Освободить слот' : '';
+const elimBtn = isAdmin() ? '' + (p.alive ? '🚫 Выгнать' : '♻️ Вернуть') + '' : '';
+return '<div class="p-card ' + (p.alive ? '' : 'eliminated') + '">' +
+'<div style="display:flex; justify-content:space-between; align-items:center; font-weight:800; margin-bottom:8px;"><span>' + p.name + '</span><div style="display:flex; gap:6px; align-items:center;">' + lockBadge + '<span style="color:' + (p.alive ? 'var(--green)' : 'var(--red)') + '; font-size:0.8rem;">' + (p.alive ? '● В игре' : '✖ Выбыл') + '</span></div></div>' +
+traitsHtml + unlockBtn + elimBtn + '</div>';}).join("");
+}
 setInterval(() => {
-  const disp = el("timerDisplay");
-  if (!disp) return;
-  if (!gameState || !gameState.timerEnd) {
-    disp.textContent = "00:00";
-    disp.classList.remove("low");
-    return;
-  }
-  const diff = Math.max(0, Math.ceil((gameState.timerEnd - Date.now()) / 1000));
-  disp.textContent = String(Math.floor(diff / 60)).padStart(2, "0") + ":" + String(diff % 60).padStart(2, "0");
-  if (diff > 0 && diff <= 10) disp.classList.add("low");
-  else disp.classList.remove("low");
+const disp = el("timerDisplay");
+if (!disp) return;
+if (!gameState || !gameState.timerEnd) {
+disp.textContent = "00:00";
+disp.classList.remove("low");
+return;
+}
+const diff = Math.max(0, Math.ceil((gameState.timerEnd - Date.now()) / 1000));
+disp.textContent = String(Math.floor(diff / 60)).padStart(2, "0") + ":" + String(diff % 60).padStart(2, "0");
+if (diff > 0 && diff <= 10) disp.classList.add("low");
+else disp.classList.remove("low");
 }, 250);
-
 pollDatabase();
 setInterval(pollDatabase, 500);
-</script>
-</body>
-</html>
