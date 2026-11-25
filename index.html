@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>БУНКЕР LIVE v3.5</title>
+<title>БУНКЕР LIVE v3.6</title>
 <style>
   :root {
     --bg: #0b0f17;
@@ -107,7 +107,7 @@
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v3.5</span></div>
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v3.6</span></div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button class="btn btn-sm" onclick="toggleRules(true)">📖 Правила</button>
       <button class="btn btn-sm" onclick="downloadSelfFile()">💾 Скачать файл</button>
@@ -150,6 +150,15 @@
       </div>
       <div id="newGameForm">
         <div class="admin-row">
+          <select id="disasterSelect" class="input-field" style="margin:0;">
+            <option value="random">🎲 Катастрофа: Случайная</option>
+            <option value="asteroid">☄️ Падение астероида «Апофис-М»</option>
+            <option value="virus">☣️ Пандемия вируса «Некро-9»</option>
+            <option value="nuclear">☢️ Ядерная зима</option>
+            <option value="flood">🌊 Всемирный потоп и сдвиг полюсов</option>
+          </select>
+        </div>
+        <div class="admin-row">
           <button class="btn btn-sm" onclick="fillPreset(15)">15 игроков</button>
           <button class="btn btn-sm" onclick="fillPreset(18)">18 игроков</button>
           <button class="btn btn-sm" onclick="fillPreset(22)">22 игрока</button>
@@ -184,6 +193,7 @@
         <button class="btn btn-sm" onclick="startTimer(30)">⏱️ 30 сек</button>
         <button class="btn btn-sm" onclick="startTimer(180)">⏱️ 3 мин</button>
         <button class="btn btn-sm btn-red" onclick="stopTimer()">⏹️ Стоп</button>
+        <button id="soundToggleBtn" class="btn btn-sm btn-green" onclick="toggleTimerSound()">🔔 Звук: ВКЛ</button>
       </div>
       <div class="admin-row" style="margin-top:8px;">
         <button id="toggleVoteBtn" class="btn btn-primary btn-block" onclick="toggleVoting()">🗳️ Открыть голосование (со сводкой карт)</button>
@@ -402,6 +412,8 @@ let isFetching = false;
 let localVersion = 0;
 let lastHash = "";
 let lastShownAnnouncement = "";
+let timerSoundEnabled = true;
+let lastBeepedTimerEnd = 0;
 
 function el(id) { return document.getElementById(id); }
 function toggleRules(show) { el("rulesModal").classList.toggle("active", show); }
@@ -621,7 +633,8 @@ async function createNewGame() {
   const names = el("namesInput").value.split("\n").map(s => s.trim()).filter(Boolean);
   if (names.length < 4) return toast("Нужно минимум 4 игрока!");
   const seats = parseInt(el("seatsInput").value) || Math.floor(names.length / 2);
-  const disaster = pick(DISASTERS);
+  const chosenKey = el("disasterSelect") ? el("disasterSelect").value : "random";
+  const disaster = chosenKey === "random" ? pick(DISASTERS) : (DISASTERS.find(d => d.key === chosenKey) || pick(DISASTERS));
   const newGameId = "game_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
   const players = names.map((name, i) => ({
     id: "p_" + i + "_" + Math.floor(Math.random() * 100000),
@@ -678,6 +691,35 @@ function stopTimer() {
   pushState(gameState);
 }
 
+function toggleTimerSound() {
+  timerSoundEnabled = !timerSoundEnabled;
+  const btn = el("soundToggleBtn");
+  if (btn) {
+    btn.textContent = timerSoundEnabled ? "🔔 Звук: ВКЛ" : "🔕 Звук: ВЫКЛ";
+    btn.className = timerSoundEnabled ? "btn btn-sm btn-green" : "btn btn-sm";
+  }
+}
+
+function playEndBeep() {
+  if (!timerSoundEnabled) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const delays = new Array(0, 0.25, 0.5);
+    delays.forEach((delay, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = idx === 2 ? 880 : 660;
+      gain.gain.setValueAtTime(0.25, ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.18);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.19);
+    });
+  } catch (e) {}
+}
+
 function toggleTrait(pid, key) {
   if (!gameState || !isAdmin()) return;
   const p = gameState.players.find(x => x.id === pid);
@@ -686,6 +728,20 @@ function toggleTrait(pid, key) {
     p.revealed[key] = !p.revealed[key];
     pushState(gameState);
   }
+}
+
+function rerollTrait(pid, key) {
+  if (!gameState || !isAdmin()) return;
+  const p = gameState.players.find(x => x.id === pid);
+  if (!p) return;
+  if (key === "prof") p.traits.prof = pick(PROFS);
+  else if (key === "bio") p.traits.bio = generateBio();
+  else if (key === "health") p.traits.health = pick(HEALTHS);
+  else if (key === "hobby") p.traits.hobby = pick(HOBBIES);
+  else if (key === "phobia") p.traits.phobia = pick(PHOBIAS);
+  else if (key === "bag") p.traits.bag = pick(BAGS);
+  pushState(gameState);
+  toast("🔄 Обновлено: " + TRAIT_NAMES[key] + " для " + p.name);
 }
 
 function revealMyTrait(key) {
@@ -1016,8 +1072,13 @@ function renderAll() {
     const traitsHtml = Object.keys(TRAIT_NAMES).map(k => {
       const open = rev[k] === true;
       const text = (open || isAdmin()) ? p.traits[k] : '<span style="color:#475569;">Скрыто 🔒</span>';
-      const btn = isAdmin() ? '<button class="btn btn-sm" style="padding:2px 7px; background:' + (open ? '#10b981' : '#334155') + '; color:' + (open ? '#000' : '#fff') + ';" onclick="toggleTrait(\'' + p.id + '\',\'' + k + '\')">' + (open ? '👁️' : '🔒') + '</button>' : '';
-      return '<div class="trait-row"><div><span style="color:var(--muted); font-size:0.78rem;">' + TRAIT_NAMES[k] + ':</span> ' + text + '</div>' + btn + '</div>';
+      const btns = isAdmin()
+        ? '<div style="display:flex; gap:4px; flex-shrink:0;">' +
+            '<button class="btn btn-sm" title="Перегенерировать (для спецкарт)" style="padding:2px 6px;" onclick="rerollTrait(\'' + p.id + '\',\'' + k + '\')">🔄</button>' +
+            '<button class="btn btn-sm" style="padding:2px 7px; background:' + (open ? '#10b981' : '#334155') + '; color:' + (open ? '#000' : '#fff') + ';" onclick="toggleTrait(\'' + p.id + '\',\'' + k + '\')">' + (open ? '👁️' : '🔒') + '</button>' +
+          '</div>'
+        : '';
+      return '<div class="trait-row"><div><span style="color:var(--muted); font-size:0.78rem;">' + TRAIT_NAMES[k] + ':</span> ' + text + '</div>' + btns + '</div>';
     }).join("");
 
     const lockBadge = p.claimedBy ? '<span style="color:var(--blue); font-size:0.75rem;">📱 Занята</span>' : '<span style="color:var(--muted); font-size:0.75rem;">Свободна</span>';
@@ -1038,10 +1099,17 @@ setInterval(() => {
     disp.classList.remove("low");
     return;
   }
-  const diff = Math.max(0, Math.ceil((gameState.timerEnd - Date.now()) / 1000));
+  const rawLeft = gameState.timerEnd - Date.now();
+  const diff = Math.max(0, Math.ceil(rawLeft / 1000));
   disp.textContent = String(Math.floor(diff / 60)).padStart(2, "0") + ":" + String(diff % 60).padStart(2, "0");
   if (diff > 0 && diff <= 10) disp.classList.add("low");
   else disp.classList.remove("low");
+
+  if (rawLeft <= 0 && lastBeepedTimerEnd !== gameState.timerEnd) {
+    lastBeepedTimerEnd = gameState.timerEnd;
+    playEndBeep();
+    toast("⏰ Время вышло!");
+  }
 }, 250);
 
 pollDatabase();
