@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>БУНКЕР LIVE v2.1</title>
+<title>БУНКЕР LIVE v2.2</title>
 <style>
   :root {
     --bg: #0b0f17;
@@ -60,7 +60,7 @@
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v2.1 (Fast Sync)</span></div>
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v2.2</span></div>
     <div style="display:flex; gap:8px; align-items:center;">
       <span id="connStatus" class="status-pill">● Подключение...</span>
       <button id="logoutBtn" class="btn btn-sm btn-red" style="display:none;" onclick="logoutRole()">Выйти</button>
@@ -254,7 +254,7 @@ async function pushState(newState) {
     localVersion = 0;
   }
   gameState = newState;
-  renderAll(); // Мгновенно отрисовываем у нажавшего
+  renderAll();
   try {
     await fetch(DB_URL + "/gameRoom/state.json", {
       method: "PUT",
