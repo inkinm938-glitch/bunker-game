@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>БУНКЕР LIVE v2.9</title>
+<title>БУНКЕР LIVE v3.0</title>
 <style>
   :root {
     --bg: #0b0f17;
@@ -90,7 +90,7 @@
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v2.9</span></div>
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v3.0</span></div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button class="btn btn-sm" onclick="downloadSelfFile()">💾 Скачать файл</button>
       <span id="connStatus" class="status-pill">● Подключение...</span>
@@ -174,13 +174,13 @@
       </div>
     </div>
 
-    <!-- ЛИЧНАЯ КАРТОЧКА ИГРОКА (Изначально все характеристики закрыты) -->
+    <!-- ЛИЧНАЯ КАРТОЧКА ИГРОКА (Видит только владелец, открывает остальным поэтапно) -->
     <div id="mySecretCard" class="card-box my-card" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:8px; flex-wrap:wrap;">
         <h3 id="myPlayerName" style="color:var(--blue);"></h3>
         <button class="btn btn-sm" onclick="releaseAndChangeMyPlayer()">Сменить имя</button>
       </div>
-      <p style="font-size:0.8rem; color:#93c5fd; margin-bottom:8px;">Изначально все ваши характеристики закрыты. Нажмите <b>«👁️ Открыть»</b>, чтобы раскрыть выбранную карту себе и остальным:</p>
+      <p style="font-size:0.8rem; color:#93c5fd; margin-bottom:8px;">Эти данные видите <b>только вы</b>. Нажимайте <b>«👁️ Открыть всем»</b> поэтапно в каждом раунде, чтобы показать выбранную характеристику остальным:</p>
       <div id="myTraitsList"></div>
     </div>
 
@@ -475,7 +475,7 @@ async function createNewGame() {
     }
   }));
   await pushState({ gameId: newGameId, disaster, seats, timerEnd: null, votingOpen: false, votes: {}, players });
-  toast("🚀 Новая игра запущена! Все характеристики закрыты.");
+  toast("🚀 Новая игра запущена! Все карты закрыты для других.");
 }
 
 function resetGameConfirm() {
@@ -512,9 +512,10 @@ function revealMyTrait(key) {
   if (!me || !me.alive) return toast("Выбывшие игроки не могут открывать карты!");
   if (!me.revealed) me.revealed = { prof: false, bio: false, health: false, hobby: false, phobia: false, bag: false };
   if (me.revealed[key]) return;
-  if (confirm("Открыть характеристику «" + TRAIT_NAMES[key] + "» для себя и всех остальных?")) {
+  if (confirm("Открыть характеристику «" + TRAIT_NAMES[key] + "» для всех игроков?")) {
     me.revealed[key] = true;
     pushState(gameState);
+    toast("👁️ Вы открыли «" + TRAIT_NAMES[key] + "» для всех!");
   }
 }
 
@@ -575,7 +576,6 @@ function validatePlayerSession() {
 function renderAll() {
   validatePlayerSession();
 
-  // Обновляем задний фон страницы под текущее происшествие
   if (gameState && gameState.disaster && gameState.disaster.img) {
     document.body.style.backgroundImage = 'url("' + gameState.disaster.img + '")';
   } else {
@@ -641,7 +641,7 @@ function renderAll() {
   const alivePlayers = gameState.players.filter(p => p.alive);
   el("bunkerMeta").textContent = "Мест в бункере: " + gameState.seats + " | Живых: " + alivePlayers.length + " из " + gameState.players.length + " | " + gameState.disaster.bunker;
 
-  // Личная карточка игрока: изначально все характеристики закрыты
+  // Личная карточка игрока: сам игрок видит свои данные сразу, но для всех остальных они закрыты до нажатия кнопки
   if (currentRole === "player" && myPlayerId) {
     const me = gameState.players.find(p => p.id === myPlayerId);
     if (me) {
@@ -650,13 +650,10 @@ function renderAll() {
       const rev = me.revealed || {};
       el("myTraitsList").innerHTML = Object.keys(TRAIT_NAMES).map(k => {
         const isOpen = rev[k] === true;
-        const valDisplay = isOpen
-          ? '<strong>' + me.traits[k] + '</strong>'
-          : '<span style="color:#64748b; font-style:italic;">Закрыто 🔒</span>';
         const btn = isOpen
-          ? '<span style="color:var(--green); font-size:0.78rem; font-weight:700;">✅ Открыто</span>'
-          : (me.alive ? '<button class="btn btn-sm btn-blue" onclick="revealMyTrait(\'' + k + '\')">👁️ Открыть</button>' : '');
-        return '<div class="trait-row"><div><span style="color:var(--muted); font-size:0.8rem;">' + TRAIT_NAMES[k] + ':</span> ' + valDisplay + '</div>' + btn + '</div>';
+          ? '<span style="color:var(--green); font-size:0.78rem; font-weight:700;">✅ Открыто всем</span>'
+          : (me.alive ? '<button class="btn btn-sm btn-blue" onclick="revealMyTrait(\'' + k + '\')">👁️ Открыть всем</button>' : '<span style="color:var(--muted); font-size:0.78rem;">🔒 Не открыто</span>');
+        return '<div class="trait-row"><div><span style="color:var(--muted); font-size:0.8rem;">' + TRAIT_NAMES[k] + ':</span> <strong>' + me.traits[k] + '</strong></div>' + btn + '</div>';
       }).join("");
     }
   } else {
@@ -696,6 +693,7 @@ function renderAll() {
     el("votingBlock").style.display = "none";
   }
 
+  // Общий стол: для всех игроков чужие неоткрытые характеристики скрыты
   const sorted = gameState.players.slice().sort((a, b) => (a.alive === b.alive ? 0 : a.alive ? -1 : 1));
   el("playersContainer").innerHTML = sorted.map(p => {
     const rev = p.revealed || {};
