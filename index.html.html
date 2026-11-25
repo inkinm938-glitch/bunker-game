@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>БУНКЕР — Игровая платформа</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #181b22;
+    --card-hover: #20242e;
+    --border: #2a2f3d;
+    --accent: #f59e0b;
+    --accent-hover: #d97706;
+    --text: #f3f4f6;
+    --muted: #9ca3af;
+    --danger: #ef4444;
+    --success: #10b981;
+    --info: #3b82f6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+  body { background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
+  header {
+    background: var(--card); border-bottom: 1px solid var(--border);
+    padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-size: 1.4rem; font-weight: 800; letter-spacing: 1px; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+  .badge { font-size: 0.75rem; padding: 3px 8px; border-radius: 6px; background: #2a2f3d; color: var(--text); font-weight: 600; }
+  .badge.admin { background: rgba(245, 158, 11, 0.2); color: var(--accent); border: 1px solid var(--accent); }
+  .badge.player { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
+  .container { max-width: 1200px; margin: 24px auto; padding: 0 16px; }
+  .btn {
+    background: var(--accent); color: #000; border: none; padding: 10px 18px;
+    border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.95rem; transition: 0.2s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn:hover { background: var(--accent-hover); }
+  .btn-secondary { background: #2a2f3d; color: var(--text); }
+  .btn-secondary:hover { background: #373e50; }
+  .btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid var(--danger); }
+  .btn-danger:hover { background: var(--danger); color: #fff; }
+  .btn-success { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid var(--success); }
+  .btn-success:hover { background: var(--success); color: #fff; }
+  .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+  h2 { font-size: 1.25rem; margin-bottom: 14px; color: var(--accent); }
+  h3 { font-size: 1.05rem; margin-bottom: 10px; }
+
+  input, textarea, select {
+    width: 100%; background: #111318; border: 1px solid var(--border); color: var(--text);
+    padding: 10px 12px; border-radius: 8px; font-size: 0.95rem; margin-bottom: 12px;
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+
+  /* Login screen */
+  .login-box { max-width: 440px; margin: 60px auto; text-align: center; }
+  .role-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+  .role-tab {
+    flex: 1; padding: 10px; border-radius: 8px; background: #111318; border: 1px solid var(--border);
+    color: var(--muted); cursor: pointer; font-weight: 600;
+  }
+  .role-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(245, 158, 11, 0.08); }
+
+  /* Scenario box */
+  .scenario-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .scenario-item { background: #111318; padding: 14px; border-radius: 8px; border: 1px solid var(--border); }
+  .scenario-label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+
+  /* Timer & Controls */
+  .controls-bar {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+    background: #111318; padding: 14px 18px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 20px;
+  }
+  .timer-display { font-size: 1.8rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--accent); min-width: 85px; text-align: center; }
+
+  /* Players Grid */
+  .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 16px; }
+  .player-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px;
+    position: relative; transition: 0.2s;
+  }
+  .player-card.eliminated { opacity: 0.45; border-color: var(--danger); }
+  .player-card.eliminated::after {
+    content: "ВЫБЫЛ"; position: absolute; top: 14px; right: 14px;
+    background: var(--danger); color: #fff; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 4px;
+  }
+  .player-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .player-name { font-weight: 700; font-size: 1.1rem; }
+  .attr-row {
+    display: flex; justify-content: space-between; align-items: center; padding: 7px 10px;
+    background: #111318; border-radius: 6px; margin-bottom: 6px; font-size: 0.9rem; gap: 8px;
+  }
+  .attr-key { color: var(--muted); font-size: 0.82rem; min-width: 85px; }
+  .attr-val { font-weight: 600; text-align: right; flex: 1; }
+  .attr-hidden { color: #4b5563; font-style: italic; }
+  .eye-btn {
+    background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 5px;
+    padding: 2px 7px; cursor: pointer; font-size: 0.8rem;
+  }
+  .eye-btn.open { border-color: var(--success); color: var(--success); }
+
+  /* Invite Link Box */
+  .invite-box {
+    background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.4);
+    border-radius: 10px; padding: 16px; margin-bottom: 20px;
+  }
+  .invite-row { display: flex; gap: 8px; margin-top: 8px; }
+  .invite-row input { margin-bottom: 0; font-family: monospace; font-size: 0.85rem; }
+
+  /* Modal */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none;
+    align-items: center; justify-content: center; z-index: 200; padding: 16px;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; max-width: 460px; width: 100%; }
+
+  .toast {
+    position: fixed; bottom: 20px; right: 20px; background: var(--success); color: #000;
+    font-weight: 700; padding: 10px 18px; border-radius: 8px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 300;
+  }
+  .toast.show { opacity: 1; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">☢️ БУНКЕР <span id="roleBadge" class="badge hidden"></span></div>
+  <div id="headerActions" class="hidden" style="display:flex; gap:8px; flex-wrap:wrap;">
+    <button id="btnSettings" class="btn btn-secondary btn-sm hidden" onclick="openSettings()">⚙️ Пароли админов</button>
+    <button class="btn btn-secondary btn-sm" onclick="logout()">Выйти</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ЭКРАН ВХОДА ДЛЯ АДМИНОВ И ОБЩЕГО ДОСТУПА -->
+  <div id="loginView" class="card login-box">
+    <h2>Вход в панель управления</h2>
+    <p style="color:var(--muted); font-size:0.9rem; margin-bottom:18px;">
+      Авторизация для ведущих игры. Участники подключаются по ссылке-приглашению.
+    </p>
+    <div class="role-tabs">
+      <div class="role-tab active" id="tabAdmin1" onclick="selectAdminTab(1)">Ведущий №1</div>
+      <div class="role-tab" id="tabAdmin2" onclick="selectAdminTab(2)">Ведущий №2</div>
+    </div>
+    <input type="password" id="adminPasswordInput" placeholder="Введите пароль ведущего..." onkeydown="if(event.key==='Enter') loginAdmin()">
+    <button class="btn" style="width:100%;" onclick="loginAdmin()">Войти как ведущий</button>
+    <p id="loginError" style="color:var(--danger); font-size:0.85rem; margin-top:10px; display:none;">Неверный пароль</p>
+  </div>
+
+  <!-- ИНТЕРФЕЙС ИГРОКА ПО ССЫЛКЕ-ПРИГЛАШЕНИЮ -->
+  <div id="playerInviteView" class="hidden">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+        <h2>🌍 Вводная катастрофы</h2>
+        <span class="badge player" id="inviteBunkerSlots">Мест в бункере: —</span>
+      </div>
+      <div class="scenario-grid" id="inviteScenarioGrid"></div>
+    </div>
+
+    <div class="card" id="playerSelectCard">
+      <h2>👤 Выберите себя из списка участников</h2>
+      <p style="color:var(--muted); font-size:0.9rem; margin-bottom:14px;">
+        Нажмите на своё имя, чтобы получить секретную карточку персонажа на этот раунд.
+      </p>
+      <div id="playerButtonsList" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px;"></div>
+    </div>
+
+    <div class="card hidden" id="myPersonalCard">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h2 style="margin:0;">🪪 Ваша карточка: <span id="myCardName" style="color:#fff;"></span></h2>
+        <button class="btn btn-secondary btn-sm" onclick="resetPlayerSelection()">Сменить игрока</button>
+      </div>
+      <p style="color:var(--muted); font-size:0.85rem; margin-bottom:14px;">
+        Не показывайте экран соседям! Называйте характеристики только тогда, когда скажет ведущий.
+      </p>
+      <div id="myCardAttributes"></div>
+    </div>
+  </div>
+
+  <!-- ИНТЕРФЕЙС ВЕДУЩЕГО (АДМИНА) -->
+  <div id="adminView" class="hidden">
+
+    <!-- Блок генерации новой партии -->
+    <div class="card" id="setupPanel">
+      <h2>🛠️ Создание новой игры (15+ человек)</h2>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
+        <div>
+          <label style="font-size:0.85rem; color:var(--muted);">Количество игроков</label>
+          <input type="number" id="playerCountInput" value="16" min="6" max="40" onchange="syncNamesList()">
+        </div>
+        <div>
+          <label style="font-size:0.85rem; color:var(--muted);">Мест в бункере</label>
+          <input type="number" id="bunkerSlotsInput" value="8" min="2" max="20">
+        </div>
+      </div>
+      <label style="font-size:0.85rem; color:var(--muted);">Список участников (каждый с новой строки)</label>
+      <textarea id="playerNamesInput" rows="5" placeholder="Введите имена игроков..."></textarea>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn" onclick="startNewGame()">🎲 Сгенерировать партию и ссылку-приглашение</button>
+        <button id="btnResumeGame" class="btn btn-secondary hidden" onclick="showActiveGame()">Вернуться к текущей игре</button>
+      </div>
+    </div>
+
+    <!-- Активная игра (панель ведущего) -->
+    <div id="activeGamePanel" class="hidden">
+      
+      <!-- Ссылка-приглашение для всех участников -->
+      <div class="invite-box">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <strong style="color:var(--success); font-size:1rem;">🔗 Общая ссылка-приглашение для всех участников</strong>
+          <span style="font-size:0.8rem; color:var(--muted);">Отправьте в общий чат группы — каждый выберет себя сам</span>
+        </div>
+        <div class="invite-row">
+          <input type="text" id="globalInviteUrl" readonly onclick="this.select()">
+          <button class="btn btn-success" onclick="copyGlobalInvite()">Копировать ссылку</button>
+        </div>
+        <p id="fileProtocolHint" class="hidden" style="color:var(--accent); font-size:0.8rem; margin-top:8px;">
+          ⚠️ Вы открыли файл локально с компьютера (file://). Чтобы ссылка открылась на телефонах участников, загрузите этот HTML-файл на любой бесплатный хостинг (например, GitHub Pages, Netlify или Tiiny.host) и скопируйте ссылку оттуда.
+        </p>
+      </div>
+
+      <!-- Сценарий -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+          <h2 style="margin:0;">🌍 Катастрофа и условия бункера</h2>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-secondary btn-sm" onclick="rerollScenario()">🔄 Другая катастрофа</button>
+            <button class="btn btn-secondary btn-sm" onclick="showSetup()">➕ Новая игра</button>
+          </div>
+        </div>
+        <div class="scenario-grid" id="adminScenarioGrid"></div>
+      </div>
+
+      <!-- Таймер и счетчик мест -->
+      <div class="controls-bar">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span class="timer-display" id="timerText">00:30</span>
+          <button class="btn btn-sm" onclick="startTimer(30)">▶ 30 сек (визитка)</button>
+          <button class="btn btn-sm" onclick="startTimer(180)">▶ 3 мин (дебаты)</button>
+          <button class="btn btn-secondary btn-sm" onclick="stopTimer()">⏹ Стоп</button>
+        </div>
+        <div style="font-weight:700; font-size:1rem;">
+          В игре: <span id="aliveCount" style="color:var(--success);">0</span> / Мест в бункере: <span id="targetSlots" style="color:var(--accent);">0</span>
+        </div>
+      </div>
+
+      <!-- Карточки всех игроков для ведущих -->
+      <div class="players-grid" id="adminPlayersGrid"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Модальное окно смены паролей -->
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal">
+    <h2>⚙️ Смена паролей ведущих</h2>
+    <label style="font-size:0.85rem; color:var(--muted);">Новый пароль для Ведущего №1</label>
+    <input type="password" id="newPass1" placeholder="Оставьте пустым, чтобы не менять">
+    <label style="font-size:0.85rem; color:var(--muted);">Новый пароль для Ведущего №2</label>
+    <input type="password" id="newPass2" placeholder="Оставьте пустым, чтобы не менять">
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+      <button class="btn btn-secondary" onclick="closeSettings()">Отмена</button>
+      <button class="btn" onclick="savePasswords()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Скопировано!</div>
+
+<script>
+// База данных для генерации
+const DATA = {
+  catastrophes: [
+    {
+      title: "Столкновение с астероидом «Апофис-2»",
+      desc: "Пылевое облако закрыло солнце. Наступила ядерная зима, температура на поверхности упала до -45°C. Вода на поверхности замерзла.",
+      duration: "2 года",
+      bunker: "Площадь 250 м², есть автономный ядерный микрореактор, гидропонная ферма (требует ремонта), запас консервов на 1.5 года, но отсутствует медицинский блок."
+    },
+    {
+      title: "Неизвестный нейровирус «Морфей»",
+      desc: "95% населения планеты впало в летаргический сон. Вирус передается воздушно-капельным путем и мутирует на открытом воздухе.",
+      duration: "1 год",
+      bunker: "Герметичный подземный комплекс с системой фильтрации воздуха (фильтры нужно менять каждые 2 месяца), есть лаборатория, библиотека и запас медикаментов."
+    },
+    {
+      title: "Супервулкан Йеллоустоун и тектонический сдвиг",
+      desc: "Мощнейшие землетрясения разрушили города. Атмосфера отравлена сернистым газом, идут кислотные дожди.",
+      duration: "3 года",
+      bunker: "Глубокая шахта в скальной породе. Есть геотермальный источник энергии, скважина с артезианской водой, мастерская со станками, но слабая вентиляция."
+    },
+    {
+      title: "Глобальная солнечная вспышка",
+      desc: "Вся электроника на поверхности планеты сгорела, озоновый слой уничтожен. Выход на поверхность днем смертелен из-за радиации.",
+      duration: "1.5 года",
+      bunker: "Противорадиационное убежище. Запас воды и сухпайков полный, есть склад запчастей и радиостанция, но сломана система очистки сточных вод."
+    },
+    {
+      title: "Восстание автономных боевых дронов",
+      desc: "ИИ вышел из-под контроля и уничтожает любую технику и скопления людей на поверхности с помощью автономных роев.",
+      duration: "2 года",
+      bunker: "Замаскированный лесной бункер без электромагнитного излучения. Есть запас топлива, оружейная комната, оранжерея, но требуется строгая тишина и маскировка."
+    }
+  ],
+  professions: [
+    "Хирург-травматолог", "Инженер-энергетик", "Агроном-селекционер", "Автомеханик", "Повар-технолог",
+    "Микробиолог", "Сварщик-монтажник", "Психолог-психиатр", "Сантехник-водопроводчик", "Военный разведчик",
+    "Учитель физики и химии", "Ветеринар", "Строитель-прораб", "Программист-электронщик", "Пожарный-спасатель",
+    "Лесник-охотовед", "Юрист", "Блогер-миллионник", "Артист цирка", "Бухгалтер",
+    "Фармацевт", "Геолог", "Стоматолог", "Электрик высоковольтных сетей", "Портной-швея"
+  ],
+  health: [
+    "Идеально здоров", "Идеально здоров", "Астма (нужен ингалятор)", "Близорукость -5 (в очках)",
+    "Аллергия на пыль и плесень", "Гипертония", "Сахарный диабет 1 типа", "Хроническая бессонница",
+    "Непереносимость лактозы", "Плоскостопие", "Больная спина (грыжа)", "Отличный иммунитет",
+    "Глухота на одно ухо", "Клаустрофобия средней тяжести", "Шумы в сердце"
+  ],
+  hobbies: [
+    "Самогоноварение", "Ремонт любой электроники", "Игра на гитаре и пение", "Мастер спорта по боксу",
+    "Выращивание грибов и зеленью", "Знание 4 иностранных языков", "Стрельба из лука и арбалета",
+    "Оказание первой помощи", "Кулинария из минимального набора продуктов", "Резьба по дереву и столярка",
+    "Йога и дыхательные практики", "Настольные игры и организация досуга", "Шитье и ремонт одежды",
+    "Радиолюбитель (сборка раций)", "Астрономия и ориентирование"
+  ],
+  traits: [
+    "Прирожденный лидер", "Паникер при ЧС", "Душа компании", "Патологический врун",
+    "Хладнокровный стратег", "Агрессивный спорщик", "Конфликтный эгоист", "Трудоголик",
+    "Боится темноты", "Крайне бережливый", "Склонен к депрессии", "Неисправимый оптимист",
+    "Подозрительный параноик", "Отличный переговорщик", "Брезгливый чистоплюй"
+  ],
+  baggage: [
+    "Большая армейская аптечка", "Набор слесарных инструментов", "Канистра спирта (10 л)",
+    "Мешок семенного картофеля", "Гитара с запасными струнами", "Ящик тушенки (20 банок)",
+    "Комплект раций на батарейках", "Сварочный аппарат", "Книга «Выживание в автономных условиях»",
+    "Набор настольных игр и карты", "Охотничий нож и точильный камень", "Фильтр для очистки воды",
+    "Коробка антибиотиков", "Фонарик с динамо-машиной", "Спальный мешок на -40°C"
+  ],
+  specials: [
+    "Вылечить любого игрока от его болезни",
+    "Обменяться профессией с любым игроком",
+    "Заменить катастрофу на случайную",
+    "Двойной голос на следующем голосовании",
+    "Иммунитет от изгнания на 1 круг",
+    "Заставить любого игрока открыть 1 закрытую карту",
+    "Забрать багаж у любого игрока",
+    "Нет спецкарты (обычный житель)"
+  ]
+};
+
+// Состояние приложения
+let selectedAdminSlot = 1;
+let currentAdmin = null;
+let gameState = null;
+let timerInterval = null;
+let timeLeft = 30;
+
+// Инициализация паролей
+function getPasswords() {
+  const saved = localStorage.getItem('bunker_admin_passwords');
+  if (saved) return JSON.parse(saved);
+  return { 1: '1111', 2: '2222' };
+}
+
+// Кодирование и декодирование состояния игры в URL для ссылки-приглашения (UTF-8 safe Base64)
+function encodeStateToUrl(state) {
+  const compact = {
+    s: state.slots,
+    c: state.scenario,
+    p: state.players.map(pl => ({
+      n: pl.name,
+      a: [pl.attrs.prof, pl.attrs.bio, pl.attrs.health, pl.attrs.hobby, pl.attrs.trait, pl.attrs.baggage, pl.attrs.special]
+    }))
+  };
+  const json = JSON.stringify(compact);
+  const bytes = new TextEncoder().encode(json);
+  let bin = '';
+  bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function decodeStateFromUrl(hashStr) {
+  try {
+    let b64 = hashStr.replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const json = new TextDecoder().decode(bytes);
+    const compact = JSON.parse(json);
+    return {
+      slots: compact.s,
+      scenario: compact.c,
+      players: compact.p.map((pl, idx) => ({
+        id: idx,
+        name: pl.n,
+        attrs: {
+          prof: pl.a[0],
+          bio: pl.a[1],
+          health: pl.a[2],
+          hobby: pl.a[3],
+          trait: pl.a[4],
+          baggage: pl.a[5],
+          special: pl.a[6]
+        }
+      }))
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+// Проверка при загрузке страницы
+window.onload = () => {
+  // Проверяем, зашел ли участник по ссылке-приглашению (#invite=...)
+  const hash = window.location.hash;
+  if (hash && hash.startsWith('#invite=')) {
+    const token = hash.replace('#invite=', '');
+    const invitedGame = decodeStateFromUrl(token);
+    if (invitedGame) {
+      initPlayerInviteMode(invitedGame);
+      return;
+    }
+  }
+
+  // Восстанавливаем сохраненную игру админа, если есть
+  const savedGame = localStorage.getItem('bunker_active_game');
+  if (savedGame) {
+    gameState = JSON.parse(savedGame);
+    document.getElementById('btnResumeGame').classList.remove('hidden');
+  }
+  syncNamesList();
+};
+
+// --- РЕЖИМ ИГРОКА ПО ССЫЛКЕ-ПРИГЛАШЕНИЮ ---
+let invitedGameData = null;
+
+function initPlayerInviteMode(data) {
+  invitedGameData = data;
+  document.getElementById('loginView').classList.add('hidden');
+  document.getElementById('playerInviteView').classList.remove('hidden');
+
+  const badge = document.getElementById('roleBadge');
+  badge.textContent = 'Участник игры';
+  badge.className = 'badge player';
+  badge.classList.remove('hidden');
+
+  document.getElementById('inviteBunkerSlots').textContent = `Мест в бункере: ${data.slots} из ${data.players.length}`;
+  renderScenario(data.scenario, 'inviteScenarioGrid');
+
+  // Проверяем, выбирал ли игрок себя ранее на этом устройстве
+  const savedMyId = sessionStorage.getItem('bunker_my_player_id');
+  if (savedMyId !== null && data.players[savedMyId]) {
+    showMyPersonalCard(parseInt(savedMyId, 10));
+  } else {
+    renderPlayerSelectionList();
+  }
+}
+
+function renderPlayerSelectionList() {
+  document.getElementById('playerSelectCard').classList.remove('hidden');
+  document.getElementById('myPersonalCard').classList.add('hidden');
+  const list = document.getElementById('playerButtonsList');
+  list.innerHTML = '';
+  invitedGameData.players.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-secondary';
+    btn.style.justifyContent = 'flex-start';
+    btn.textContent = `${p.id + 1}. ${p.name}`;
+    btn.onclick = () => showMyPersonalCard(p.id);
+    list.appendChild(btn);
+  });
+}
+
+function showMyPersonalCard(playerId) {
+  sessionStorage.setItem('bunker_my_player_id', playerId);
+  const player = invitedGameData.players[playerId];
+  document.getElementById('playerSelectCard').classList.add('hidden');
+  document.getElementById('myPersonalCard').classList.remove('hidden');
+  document.getElementById('myCardName').textContent = player.name;
+
+  const labels = [
+    ['Профессия', player.attrs.prof],
+    ['Биология', player.attrs.bio],
+    ['Здоровье', player.attrs.health],
+    ['Хобби / Навык', player.attrs.hobby],
+    ['Характер / Фобия', player.attrs.trait],
+    ['Багаж', player.attrs.baggage],
+    ['Карта действия', player.attrs.special]
+  ];
+
+  const container = document.getElementById('myCardAttributes');
+  container.innerHTML = labels.map(([k, v]) => `
+    <div class="attr-row">
+      <span class="attr-key">${k}</span>
+      <span class="attr-val" style="color:#fff;">${v}</span>
+    </div>
+  `).join('');
+}
+
+function resetPlayerSelection() {
+  sessionStorage.removeItem('bunker_my_player_id');
+  renderPlayerSelectionList();
+}
+
+// --- АВТОРИЗАЦИЯ ВЕДУЩИХ ---
+function selectAdminTab(num) {
+  selectedAdminSlot = num;
+  document.getElementById('tabAdmin1').classList.toggle('active', num === 1);
+  document.getElementById('tabAdmin2').classList.toggle('active', num === 2);
+  document.getElementById('loginError').style.display = 'none';
+  document.getElementById('adminPasswordInput').value = '';
+  document.getElementById('adminPasswordInput').focus();
+}
+
+function loginAdmin() {
+  const inputPass = document.getElementById('adminPasswordInput').value.trim();
+  const passwords = getPasswords();
+  if (inputPass === passwords[selectedAdminSlot]) {
+    currentAdmin = selectedAdminSlot;
+    document.getElementById('loginView').classList.add('hidden');
+    document.getElementById('adminView').classList.remove('hidden');
+    document.getElementById('headerActions').classList.remove('hidden');
+    document.getElementById('btnSettings').classList.remove('hidden');
+
+    const badge = document.getElementById('roleBadge');
+    badge.textContent = `Ведущий №${currentAdmin}`;
+    badge.className = 'badge admin';
+    badge.classList.remove('hidden');
+
+    if (gameState) {
+      showActiveGame();
+    }
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+function logout() {
+  currentAdmin = null;
+  stopTimer();
+  document.getElementById('adminView').classList.add('hidden');
+  document.getElementById('headerActions').classList.add('hidden');
+  document.getElementById('roleBadge').classList.add('hidden');
+  document.getElementById('loginView').classList.remove('hidden');
+  document.getElementById('adminPasswordInput').value = '';
+}
+
+// Настройка паролей
+function openSettings() {
+  document.getElementById('newPass1').value = '';
+  document.getElementById('newPass2').value = '';
+  document.getElementById('settingsModal').classList.add('show');
+}
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('show');
+}
+function savePasswords() {
+  const p1 = document.getElementById('newPass1').value.trim();
+  const p2 = document.getElementById('newPass2').value.trim();
+  const passwords = getPasswords();
+  if (p1) passwords[1] = p1;
+  if (p2) passwords[2] = p2;
+  localStorage.setItem('bunker_admin_passwords', JSON.stringify(passwords));
+  closeSettings();
+  showToast('Пароли обновлены!');
+}
+
+// --- ГЕНЕРАЦИЯ И УПРАВЛЕНИЕ ИГРОЙ ---
+function syncNamesList() {
+  const count = Math.max(6, Math.min(40, parseInt(document.getElementById('playerCountInput').value) || 16));
+  document.getElementById('bunkerSlotsInput').value = Math.floor(count / 2);
+  const textarea = document.getElementById('playerNamesInput');
+  const currentLines = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+  const lines = [];
+  for (let i = 0; i < count; i++) {
+    lines.push(currentLines[i] || `Игрок ${i + 1}`);
+  }
+  textarea.value = lines.join('\n');
+}
+
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function generateBio() {
+  const genders = ['Мужчина', 'Женщина'];
+  const age = Math.floor(Math.random() * 48) + 18;
+  return `${pickRandom(genders)}, ${age} лет`;
+}
+
+function startNewGame() {
+  const rawNames = document.getElementById('playerNamesInput').value.split('\n').map(s => s.trim()).filter(Boolean);
+  const count = rawNames.length >= 6 ? rawNames.length : 16;
+  const slots = parseInt(document.getElementById('bunkerSlotsInput').value) || Math.floor(count / 2);
+
+  const players = [];
+  for (let i = 0; i < count; i++) {
+    const name = rawNames[i] || `Игрок ${i + 1}`;
+    players.push({
+      id: i,
+      name: name,
+      eliminated: false,
+      attrs: {
+        prof: pickRandom(DATA.professions),
+        bio: generateBio(),
+        health: pickRandom(DATA.health),
+        hobby: pickRandom(DATA.hobbies),
+        trait: pickRandom(DATA.traits),
+        baggage: pickRandom(DATA.baggage),
+        special: pickRandom(DATA.specials)
+      },
+      revealed: {
+        prof: false, bio: false, health: false, hobby: false, trait: false, baggage: false, special: false
+      }
+    });
+  }
+
+  gameState = {
+    slots: slots,
+    scenario: pickRandom(DATA.catastrophes),
+    players: players
+  };
+
+  saveGameState();
+  showActiveGame();
+}
+
+function saveGameState() {
+  localStorage.setItem('bunker_active_game', JSON.stringify(gameState));
+  document.getElementById('btnResumeGame').classList.remove('hidden');
+}
+
+function showSetup() {
+  document.getElementById('activeGamePanel').classList.add('hidden');
+  document.getElementById('setupPanel').classList.remove('hidden');
+}
+
+function showActiveGame() {
+  document.getElementById('setupPanel').classList.add('hidden');
+  document.getElementById('activeGamePanel').classList.remove('hidden');
+
+  // Формируем общую ссылку-приглашение
+  const token = encodeStateToUrl(gameState);
+  const baseUrl = window.location.href.split('#')[0];
+  const fullInviteUrl = `${baseUrl}#invite=${token}`;
+  document.getElementById('globalInviteUrl').value = fullInviteUrl;
+
+  if (window.location.protocol === 'file:') {
+    document.getElementById('fileProtocolHint').classList.remove('hidden');
+  } else {
+    document.getElementById('fileProtocolHint').classList.add('hidden');
+  }
+
+  renderScenario(gameState.scenario, 'adminScenarioGrid');
+  renderAdminPlayers();
+}
+
+function copyGlobalInvite() {
+  const input = document.getElementById('globalInviteUrl');
+  input.select();
+  navigator.clipboard.writeText(input.value).then(() => {
+    showToast('Ссылка-приглашение скопирована!');
+  });
+}
+
+function rerollScenario() {
+  gameState.scenario = pickRandom(DATA.catastrophes);
+  saveGameState();
+  renderScenario(gameState.scenario, 'adminScenarioGrid');
+  // Обновляем ссылку-приглашение под новую катастрофу
+  const token = encodeStateToUrl(gameState);
+  const baseUrl = window.location.href.split('#')[0];
+  document.getElementById('globalInviteUrl').value = `${baseUrl}#invite=${token}`;
+}
+
+function renderScenario(sc, containerId) {
+  document.getElementById(containerId).innerHTML = `
+    <div class="scenario-item">
+      <div class="scenario-label">Катастрофа</div>
+      <div style="font-weight:700; color:#fff; margin-bottom:4px;">${sc.title}</div>
+      <div style="font-size:0.9rem; color:var(--muted);">${sc.desc}</div>
+    </div>
+    <div class="scenario-item">
+      <div class="scenario-label">Условия бункера (Срок: ${sc.duration})</div>
+      <div style="font-size:0.9rem; color:var(--text);">${sc.bunker}</div>
+    </div>
+  `;
+}
+
+function renderAdminPlayers() {
+  const grid = document.getElementById('adminPlayersGrid');
+  grid.innerHTML = '';
+
+  const alive = gameState.players.filter(p => !p.eliminated).length;
+  document.getElementById('aliveCount').textContent = alive;
+  document.getElementById('targetSlots').textContent = gameState.slots;
+
+  const attrMeta = [
+    ['prof', 'Профессия'],
+    ['bio', 'Биология'],
+    ['health', 'Здоровье'],
+    ['hobby', 'Хобби'],
+    ['trait', 'Характер'],
+    ['baggage', 'Багаж'],
+    ['special', 'Спецкарта']
+  ];
+
+  gameState.players.forEach(p => {
+    const card = document.createElement('div');
+    card.className = `player-card ${p.eliminated ? 'eliminated' : ''}`;
+
+    const rowsHtml = attrMeta.map(([key, label]) => {
+      const isOpen = p.revealed[key];
+      return `
+        <div class="attr-row">
+          <span class="attr-key">${label}</span>
+          <span class="attr-val" style="color:${isOpen ? '#10b981' : '#f3f4f6'};">${p.attrs[key]}</span>
+          <button class="eye-btn ${isOpen ? 'open' : ''}" title="Отметить как открытое в кругу" onclick="toggleReveal(${p.id}, '${key}')">
+            ${isOpen ? '👁 Открыто' : '🔒 Скрыто'}
+          </button>
+        </div>
+      `;
+    }).join('');
+
+    card.innerHTML = `
+      <div class="player-header">
+        <span class="player-name">${p.id + 1}. ${p.name}</span>
+      </div>
+      ${rowsHtml}
+      <div style="margin-top:12px; display:flex; justify-content:flex-end;">
+        <button class="btn btn-sm ${p.eliminated ? 'btn-secondary' : 'btn-danger'}" onclick="toggleEliminate(${p.id})">
+          ${p.eliminated ? '↩ Вернуть в игру' : '❌ Выгнать из круга'}
+        </button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function toggleReveal(playerId, key) {
+  const p = gameState.players[playerId];
+  p.revealed[key] = !p.revealed[key];
+  saveGameState();
+  renderAdminPlayers();
+}
+
+function toggleEliminate(playerId) {
+  const p = gameState.players[playerId];
+  p.eliminated = !p.eliminated;
+  saveGameState();
+  renderAdminPlayers();
+}
+
+// --- ТАЙМЕР ---
+function updateTimerDisplay() {
+  const m = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+  const s = String(timeLeft % 60).padStart(2, '0');
+  document.getElementById('timerText').textContent = `${m}:${s}`;
+}
+
+function startTimer(seconds) {
+  stopTimer();
+  timeLeft = seconds;
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay();
+    if (timeLeft <= 0) {
+      stopTimer();
+      showToast('⏰ Время вышло!');
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = null;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
