@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>БУНКЕР LIVE v2.2</title>
+<title>БУНКЕР LIVE v2.3</title>
 <style>
   :root {
     --bg: #0b0f17;
@@ -60,7 +60,7 @@
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v2.2</span></div>
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v2.3</span></div>
     <div style="display:flex; gap:8px; align-items:center;">
       <span id="connStatus" class="status-pill">● Подключение...</span>
       <button id="logoutBtn" class="btn btn-sm btn-red" style="display:none;" onclick="logoutRole()">Выйти</button>
@@ -150,7 +150,7 @@
 <div id="toastBox" class="toast"></div>
 
 <script>
-const DB_URL = "https://firebasedatabase.app";
+const DB_URL = "https://" + "bunker-test-846a1-default-rtdb.europe-west1.firebasedatabase.app";
 
 const DISASTERS = [
   { title: "☄️ Падение астероида", desc: "Пыль закрыла Солнце, температура -45°C, кислотные дожди.", bunker: "Срок: 2 года | Сбоит очистка воздуха, есть медотсек без врача." },
