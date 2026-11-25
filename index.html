@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>БУНКЕР LIVE v3.2</title>
+<title>БУНКЕР LIVE v3.3</title>
 <style>
   :root {
     --bg: #0b0f17;
@@ -66,7 +66,6 @@
   .disaster-banner { width: 100%; height: 155px; background-size: cover; background-position: center; border-bottom: 1px solid var(--card-border); }
   .disaster-content { padding: 16px; }
 
-  /* Плашка раунда над таблицей */
   .round-banner {
     background: linear-gradient(90deg, rgba(245, 158, 11, 0.22) 0%, rgba(59, 130, 246, 0.22) 100%);
     backdrop-filter: blur(8px);
@@ -94,7 +93,6 @@
   @keyframes pulse { 50% { opacity: 0.6; } }
   .admin-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
 
-  /* Панель голосования и сводки */
   .vote-panel { background: rgba(25, 21, 40, 0.96); border: 2px solid var(--accent); border-radius: 16px; padding: 16px; margin-bottom: 18px; }
   .vote-item { background: #0f131f; border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; margin-bottom: 10px; transition: 0.2s; }
   .vote-item.leader { border-color: var(--red); box-shadow: 0 0 12px rgba(239, 68, 68, 0.25); }
@@ -104,7 +102,7 @@
   .vote-bar-bg { height: 8px; background: #1e293b; border-radius: 4px; overflow: hidden; margin-top: 8px; }
   .vote-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
 
-  .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; font-weight: 800; padding: 10px 18px; border-radius: 12px; z-index: 200; display: none; text-align: center; max-width: 90%; }
+  .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; font-weight: 800; padding: 10px 18px; border-radius: 12px; z-index: 200; display: none; text-align: center; max-width: 90%; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
 </style>
 </head>
 <body>
@@ -112,7 +110,7 @@
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v3.2</span></div>
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v3.3</span></div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button class="btn btn-sm" onclick="downloadSelfFile()">💾 Скачать файл</button>
       <span id="connStatus" class="status-pill">● Подключение...</span>
@@ -224,7 +222,7 @@
         <h3 style="color:var(--accent);">🗳️ Голосование: Кого НЕ пустим в бункер?</h3>
         <span id="voteProgress" style="font-size:0.85rem; font-weight:700; color:var(--green);"></span>
       </div>
-      <p style="font-size:0.83rem; color:var(--muted); margin-bottom:12px;">Перед выбором проверьте сводку всех уже открытых характеристик каждого кандидата:</p>
+      <p style="font-size:0.83rem; color:var(--muted); margin-bottom:12px;">Когда проголосуют все или ведущий закроет голосование, набравший больше всего голосов вылетит автоматически:</p>
       <div id="voteCandidatesList"></div>
     </div>
 
@@ -296,6 +294,7 @@ let isPushing = false;
 let isFetching = false;
 let localVersion = 0;
 let lastHash = "";
+let lastShownAnnouncement = "";
 
 function el(id) { return document.getElementById(id); }
 function toast(msg) {
@@ -303,7 +302,7 @@ function toast(msg) {
   t.textContent = msg;
   t.style.display = "block";
   clearTimeout(window._toastT);
-  window._toastT = setTimeout(() => { t.style.display = "none"; }, 2800);
+  window._toastT = setTimeout(() => { t.style.display = "none"; }, 3500);
 }
 
 function downloadSelfFile() {
@@ -539,6 +538,7 @@ async function createNewGame() {
     timerEnd: null,
     votingOpen: false,
     votes: {},
+    announcement: "",
     players
   });
   toast("🚀 Новая игра запущена!");
@@ -601,16 +601,57 @@ function toggleEliminate(pid) {
   }
 }
 
+// Подсчёт результатов голосования и мгновенное исключение лидера
+function finishVotingAndEliminate(stateObj, isAuto) {
+  const alive = stateObj.players.filter(p => p.alive);
+  const votesMap = stateObj.votes || {};
+  const counts = {};
+  alive.forEach(p => counts[p.id] = 0);
+  Object.values(votesMap).forEach(tid => {
+    if (counts[tid] !== undefined) counts[tid]++;
+  });
+
+  let maxVotes = 0;
+  Object.values(counts).forEach(c => { if (c > maxVotes) maxVotes = c; });
+
+  if (maxVotes === 0) {
+    stateObj.votingOpen = false;
+    stateObj.roundName = "Общие дебаты: Аргументы и споры";
+    stateObj.announcement = "Голосование закрыто без голосов (" + Date.now() + ")";
+    return;
+  }
+
+  const leaders = alive.filter(p => counts[p.id] === maxVotes);
+  if (leaders.length === 1) {
+    const victim = leaders.at(0);
+    victim.alive = false;
+    Object.keys(TRAIT_NAMES).forEach(k => victim.revealed[k] = true);
+    stateObj.votingOpen = false;
+    stateObj.roundName = "Итог голосования: " + victim.name + " выбывает из игры!";
+    stateObj.announcement = "🚫 По итогам голосования (" + maxVotes + " гол.) вылетает: " + victim.name + "!";
+  } else {
+    const tieNames = leaders.map(x => x.name).join(", ");
+    if (isAuto) {
+      stateObj.announcement = "⚖️ Ничья (" + maxVotes + " гол.) между: " + tieNames + ". Переголосуйте или решение за ведущим!";
+    } else {
+      stateObj.votingOpen = false;
+      stateObj.roundName = "Ничья на голосовании: " + tieNames;
+      stateObj.announcement = "⚖️ Ничья (" + maxVotes + " гол.): " + tieNames + ". Ведущий решает вручную.";
+    }
+  }
+}
+
 function toggleVoting() {
   if (!gameState || !isAdmin()) return;
-  gameState.votingOpen = !gameState.votingOpen;
-  if (gameState.votingOpen) {
+  if (!gameState.votingOpen) {
+    gameState.votingOpen = true;
     gameState.votes = {};
     gameState.roundName = "Голосование на вылет";
+    pushState(gameState);
   } else {
-    gameState.roundName = "Общие дебаты: Аргументы и споры";
+    finishVotingAndEliminate(gameState, false);
+    pushState(gameState);
   }
-  pushState(gameState);
 }
 
 function castVote(targetId) {
@@ -619,6 +660,14 @@ function castVote(targetId) {
   if (!me || !me.alive) return toast("Выбывшие игроки не голосуют!");
   if (!gameState.votes) gameState.votes = {};
   gameState.votes[myPlayerId] = targetId;
+
+  // Проверяем, проголосовали ли все живые игроки — если да, вылет срабатывает мгновенно
+  const alivePlayers = gameState.players.filter(p => p.alive);
+  const votedAliveCount = alivePlayers.filter(p => Boolean(gameState.votes[p.id])).length;
+  if (votedAliveCount >= alivePlayers.length) {
+    finishVotingAndEliminate(gameState, true);
+  }
+
   pushState(gameState);
   toast("✅ Ваш голос учтён!");
 }
@@ -707,7 +756,11 @@ function renderAll() {
     return;
   }
 
-  // Плашка текущего раунда над таблицей
+  if (gameState.announcement && gameState.announcement !== lastShownAnnouncement) {
+    lastShownAnnouncement = gameState.announcement;
+    toast(gameState.announcement);
+  }
+
   el("roundBanner").style.display = "flex";
   el("roundTitleText").textContent = gameState.roundName || "Подготовка: Изучение своих карточек";
 
@@ -715,7 +768,7 @@ function renderAll() {
     if (el("roundSelect") && gameState.roundName) {
       el("roundSelect").value = gameState.roundName;
     }
-    el("toggleVoteBtn").textContent = gameState.votingOpen ? "🛑 Закрыть голосование" : "🗳️ Открыть голосование (со сводкой карт)";
+    el("toggleVoteBtn").textContent = gameState.votingOpen ? "🛑 Завершить голосование и выгнать лидера" : "🗳️ Открыть голосование (со сводкой карт)";
     el("toggleVoteBtn").className = gameState.votingOpen ? "btn btn-red btn-block" : "btn btn-primary btn-block";
   }
 
@@ -743,7 +796,6 @@ function renderAll() {
     el("mySecretCard").style.display = "none";
   }
 
-  // Голосование со сводкой всех открытых характеристик
   if (gameState.votingOpen) {
     el("votingBlock").style.display = "block";
     const votesMap = gameState.votes || {};
