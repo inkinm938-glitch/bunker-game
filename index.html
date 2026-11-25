@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>БУНКЕР LIVE v2.6</title>
+<title>БУНКЕР LIVE v2.9</title>
 <style>
   :root {
     --bg: #0b0f17;
-    --card: #141b29;
-    --card-border: #232f46;
+    --card: rgba(20, 27, 41, 0.92);
+    --card-border: #28354e;
     --accent: #f59e0b;
     --blue: #3b82f6;
     --green: #10b981;
@@ -17,9 +17,25 @@
     --muted: #94a3b8;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  body { background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
-  .container { max-width: 920px; margin: 0 auto; padding: 14px; }
-  .topbar { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 12px 16px; border-radius: 14px; border: 1px solid var(--card-border); margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+  body {
+    background-color: var(--bg);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+    transition: background-image 0.5s ease;
+  }
+  .bg-overlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at top, rgba(11, 15, 23, 0.65) 0%, rgba(11, 15, 23, 0.92) 100%);
+    z-index: -1;
+    pointer-events: none;
+  }
+  .container { max-width: 920px; margin: 0 auto; padding: 14px; position: relative; z-index: 1; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; background: var(--card); backdrop-filter: blur(8px); padding: 12px 16px; border-radius: 14px; border: 1px solid var(--card-border); margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
   .logo { font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
   .badge-v { background: var(--green); color: #000; font-size: 0.72rem; padding: 2px 7px; border-radius: 6px; font-weight: 900; }
   .status-pill { font-size: 0.8rem; padding: 4px 10px; border-radius: 20px; background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 600; }
@@ -38,24 +54,28 @@
 
   .screen { display: none; }
   .screen.active { display: block; }
-  .hero-box { background: var(--card); border: 1px solid var(--card-border); border-radius: 18px; padding: 24px; text-align: center; max-width: 460px; margin: 20px auto; }
+  .hero-box { background: var(--card); backdrop-filter: blur(8px); border: 1px solid var(--card-border); border-radius: 18px; padding: 24px; text-align: center; max-width: 460px; margin: 20px auto; }
   .hero-box h1 { font-size: 1.6rem; margin-bottom: 8px; }
   .hero-box p { color: var(--muted); font-size: 0.92rem; margin-bottom: 18px; }
   .role-grid { display: flex; flex-direction: column; gap: 10px; }
   .input-field { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--card-border); background: #0b0f17; color: #fff; font-size: 1rem; margin-bottom: 12px; }
   textarea.input-field { min-height: 110px; resize: vertical; }
 
-  .card-box { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
-  .my-card { border: 2px solid var(--blue); background: #131c2e; }
+  .card-box { background: var(--card); backdrop-filter: blur(8px); border: 1px solid var(--card-border); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+  .disaster-card { padding: 0; overflow: hidden; }
+  .disaster-banner { width: 100%; height: 150px; object-fit: cover; display: block; border-bottom: 1px solid var(--card-border); }
+  .disaster-content { padding: 16px; }
+
+  .my-card { border: 2px solid var(--blue); background: rgba(19, 28, 46, 0.95); }
   .trait-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed rgba(255,255,255,0.08); gap: 8px; font-size: 0.9rem; }
   .trait-row:last-child { border-bottom: none; }
   .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(275px, 1fr)); gap: 12px; }
-  .p-card { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; }
+  .p-card { background: var(--card); backdrop-filter: blur(6px); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; }
   .p-card.eliminated { opacity: 0.45; border-color: var(--red); }
   .timer-box { font-size: 1.4rem; font-weight: 900; background: #0b0f17; padding: 6px 14px; border-radius: 10px; border: 1px solid var(--card-border); color: var(--green); }
   .admin-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
 
-  .vote-panel { background: #191528; border: 2px solid var(--accent); border-radius: 16px; padding: 16px; margin-bottom: 18px; }
+  .vote-panel { background: rgba(25, 21, 40, 0.95); border: 2px solid var(--accent); border-radius: 16px; padding: 16px; margin-bottom: 18px; }
   .vote-item { background: #0f131f; border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
   .vote-item-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 8px; }
   .vote-open-traits { font-size: 0.83rem; color: #cbd5e1; background: rgba(255,255,255,0.04); padding: 8px; border-radius: 8px; line-height: 1.45; }
@@ -66,10 +86,11 @@
 </style>
 </head>
 <body>
+<div class="bg-overlay"></div>
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v2.6</span></div>
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v2.9</span></div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button class="btn btn-sm" onclick="downloadSelfFile()">💾 Скачать файл</button>
       <span id="connStatus" class="status-pill">● Подключение...</span>
@@ -95,7 +116,7 @@
     </div>
   </div>
 
-  <!-- 2. ВЫБОР ИМЕНИ (1 КАРТОЧКА = 1 ЧЕЛОВЕК) -->
+  <!-- 2. ВЫБОР ИМЕНИ -->
   <div id="screenPickPlayer" class="screen">
     <div class="hero-box">
       <h2>Выберите своё имя</h2>
@@ -143,19 +164,23 @@
       </div>
     </div>
 
-    <div id="disasterBlock" class="card-box" style="display:none;">
-      <h3 id="disasterTitle" style="color:var(--accent); margin-bottom:6px;"></h3>
-      <p id="disasterDesc" style="font-size:0.92rem; color:#cbd5e1; margin-bottom:8px;"></p>
-      <p id="bunkerMeta" style="font-size:0.85rem; font-weight:700; color:var(--green);"></p>
+    <!-- КАРТОЧКА ПРОИСШЕСТВИЯ С КАРТИНКОЙ -->
+    <div id="disasterBlock" class="card-box disaster-card" style="display:none;">
+      <img id="disasterImg" class="disaster-banner" alt="Происшествие">
+      <div class="disaster-content">
+        <h3 id="disasterTitle" style="color:var(--accent); margin-bottom:6px;"></h3>
+        <p id="disasterDesc" style="font-size:0.92rem; color:#cbd5e1; margin-bottom:8px;"></p>
+        <p id="bunkerMeta" style="font-size:0.85rem; font-weight:700; color:var(--green);"></p>
+      </div>
     </div>
 
-    <!-- ЛИЧНАЯ КАРТОЧКА ИГРОКА -->
+    <!-- ЛИЧНАЯ КАРТОЧКА ИГРОКА (Изначально все характеристики закрыты) -->
     <div id="mySecretCard" class="card-box my-card" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:8px; flex-wrap:wrap;">
         <h3 id="myPlayerName" style="color:var(--blue);"></h3>
-        <button class="btn btn-sm" onclick="releaseAndChangeMyPlayer()">Освободить и сменить имя</button>
+        <button class="btn btn-sm" onclick="releaseAndChangeMyPlayer()">Сменить имя</button>
       </div>
-      <p style="font-size:0.8rem; color:#93c5fd; margin-bottom:8px;">В каждом раунде вы сами выбираете, какую характеристику открыть остальным:</p>
+      <p style="font-size:0.8rem; color:#93c5fd; margin-bottom:8px;">Изначально все ваши характеристики закрыты. Нажмите <b>«👁️ Открыть»</b>, чтобы раскрыть выбранную карту себе и остальным:</p>
       <div id="myTraitsList"></div>
     </div>
 
@@ -178,10 +203,16 @@
 <script>
 const DB_URL = "https://" + "bunker-test-846a1-default-rtdb" + ".europe-west1." + "firebasedatabase.app";
 
+const SVG_ASTEROID = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://w3.org' viewBox='0 0 1200 600'><defs><linearGradient id='g1' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#0f172a'/><stop offset='50%' stop-color='#450a0a'/><stop offset='100%' stop-color='#ea580c'/></linearGradient></defs><rect width='1200' height='600' fill='url(%23g1)'/><circle cx='900' cy='210' r='130' fill='%23fb923c' opacity='0.85'/><circle cx='875' cy='230' r='105' fill='%23431407'/><path d='M800 290 L150 600 L680 600 Z' fill='%23f97316' opacity='0.28'/><circle cx='220' cy='110' r='3' fill='%23fff' opacity='0.7'/><circle cx='420' cy='80' r='2' fill='%23fff' opacity='0.6'/><circle cx='650' cy='140' r='4' fill='%23fed7aa' opacity='0.8'/></svg>");
+const SVG_VIRUS = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://w3.org' viewBox='0 0 1200 600'><defs><linearGradient id='g2' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#022c22'/><stop offset='60%' stop-color='#064e3b'/><stop offset='100%' stop-color='#090d16'/></linearGradient></defs><rect width='1200' height='600' fill='url(%23g2)'/><circle cx='920' cy='280' r='150' fill='none' stroke='%2310b981' stroke-width='16' stroke-dasharray='45 28' opacity='0.7'/><circle cx='920' cy='280' r='65' fill='%2310b981' opacity='0.35'/><circle cx='320' cy='420' r='90' fill='none' stroke='%2334d399' stroke-width='10' stroke-dasharray='30 20' opacity='0.35'/></svg>");
+const SVG_NUCLEAR = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://w3.org' viewBox='0 0 1200 600'><defs><linearGradient id='g3' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='#1e293b'/><stop offset='55%' stop-color='#451a03'/><stop offset='100%' stop-color='#090d16'/></linearGradient></defs><rect width='1200' height='600' fill='url(%23g3)'/><ellipse cx='880' cy='210' rx='220' ry='95' fill='%23f59e0b' opacity='0.35'/><rect x='830' y='240' width='100' height='260' fill='%2378350f' opacity='0.5'/><polygon points='880,120 970,270 790,270' fill='none' stroke='%23fbbf24' stroke-width='10' opacity='0.75'/><circle cx='880' cy='220' r='22' fill='%23fbbf24' opacity='0.8'/></svg>");
+const SVG_FLOOD = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://w3.org' viewBox='0 0 1200 600'><defs><linearGradient id='g4' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='#082f49'/><stop offset='60%' stop-color='#0369a1'/><stop offset='100%' stop-color='#090d16'/></linearGradient></defs><rect width='1200' height='600' fill='url(%23g4)'/><path d='M0 340 Q 300 240 600 340 T 1200 340 L 1200 600 L 0 600 Z' fill='%230284c7' opacity='0.45'/><path d='M0 410 Q 300 330 600 410 T 1200 410 L 1200 600 L 0 600 Z' fill='%2338bdf8' opacity='0.3'/></svg>");
+
 const DISASTERS = new Array(
-  { title: "☄️ Падение астероида", desc: "Пыль закрыла Солнце, температура -45°C, кислотные дожди.", bunker: "Срок: 2 года | Сбоит очистка воздуха, есть медотсек без врача." },
-  { title: "☣️ Пандемия вируса «Некро-9»", desc: "Поверхность охвачена эпидемией, города закрыты на карантин.", bunker: "Срок: 1.5 года | Гермошлюз требует ручной настройки." },
-  { title: "☢️ Ядерная зима", desc: "Высокий радиационный фон, электроника на поверхности выведена из строя.", bunker: "Срок: 3 года | Есть гидропонная ферма, дизель-генератор на пределе." }
+  { title: "☄️ Падение астероида «Апофис-М»", desc: "Осколок диаметром 4 км упал в Атлантику. Пыль закрыла Солнце на 3 года, температура -45°C, идут кислотные дожди.", bunker: "Срок: 2 года | Сбоит очистка воздуха, есть медотсек без врача.", img: SVG_ASTEROID },
+  { title: "☣️ Пандемия вируса «Некро-9»", desc: "Мутировавший штамм поражает нервную систему за 48 часов. Поверхность охвачена эпидемией, города закрыты на карантин.", bunker: "Срок: 1.5 года | Гермошлюз требует ручной настройки, мало антибиотиков.", img: SVG_VIRUS },
+  { title: "☢️ Ядерная зима", desc: "Глобальный обмен ударами. Высокий радиационный фон, электроника на поверхности выведена из строя, небо затянуто пеплом.", bunker: "Срок: 3 года | Есть гидропонная ферма, дизель-генератор на пределе.", img: SVG_NUCLEAR },
+  { title: "🌊 Всемирный потоп и сдвиг полюсов", desc: "Резкое таяние ледников подняло уровень океана на 80 метров. Бункер в горах, но нижние ярусы подтапливает водой.", bunker: "Срок: 2 года | Нужно следить за дренажными насосами, есть склад семян.", img: SVG_FLOOD }
 );
 
 const PROFS = new Array("Врач-хирург", "Инженер-электрик", "Агроном", "Повар-технолог", "Слесарь-сантехник", "Психолог", "Строитель", "Биохимик", "Охотник", "Спасатель МЧС", "Ветеринар", "Сварщик", "Учитель", "Программист", "Автомеханик", "Стендап-комик", "Переводчик", "Юрист", "Блогер", "Фитнес-тренер");
@@ -192,7 +223,6 @@ const BAGS = new Array("Полевая аптечка", "Набор инстру
 
 const TRAIT_NAMES = { prof: "Профессия", bio: "Биология", health: "Здоровье", hobby: "Хобби", phobia: "Характер/Фобия", bag: "Багаж" };
 
-// Уникальный ключ устройства, чтобы на одной карточке сидел только 1 человек
 let deviceId = localStorage.getItem("bunker_device_id");
 if (!deviceId) {
   deviceId = "dev_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
@@ -327,17 +357,14 @@ async function changePasswordsPrompt() {
 function selectPlayerMode() {
   currentRole = "player";
   localStorage.setItem("bunker_role", "player");
-  // При входе за игрока проверяем актуальность его карточки
   validatePlayerSession();
   renderAll();
 }
 
-// Занятие карточки с проверкой, что на ней ещё никого нет
 async function claimPlayerCard(pid) {
   if (!gameState || !gameState.players) return;
   isFetching = true;
   try {
-    // Делаем контрольный запрос свежей базы перед занятием слота
     const res = await fetch(DB_URL + "/gameRoom/state.json", { cache: "no-store" });
     const freshState = await res.json();
     if (!freshState || !freshState.players) return;
@@ -350,7 +377,6 @@ async function claimPlayerCard(pid) {
       return toast("🔒 Эту карточку только что занял другой игрок!");
     }
 
-    // Освобождаем предыдущую карточку этого устройства, если вдруг была
     freshState.players.forEach(p => {
       if (p.claimedBy === deviceId && p.id !== pid) p.claimedBy = null;
     });
@@ -439,10 +465,17 @@ async function createNewGame() {
       phobia: pick(PHOBIAS),
       bag: pick(BAGS)
     },
-    revealed: { prof: false, bio: false, health: false, hobby: false, phobia: false, bag: false }
+    revealed: {
+      prof: false,
+      bio: false,
+      health: false,
+      hobby: false,
+      phobia: false,
+      bag: false
+    }
   }));
   await pushState({ gameId: newGameId, disaster, seats, timerEnd: null, votingOpen: false, votes: {}, players });
-  toast("🚀 Новая игра запущена!");
+  toast("🚀 Новая игра запущена! Все характеристики закрыты.");
 }
 
 function resetGameConfirm() {
@@ -467,6 +500,7 @@ function toggleTrait(pid, key) {
   if (!gameState || !isAdmin()) return;
   const p = gameState.players.find(x => x.id === pid);
   if (p) {
+    if (!p.revealed) p.revealed = { prof: false, bio: false, health: false, hobby: false, phobia: false, bag: false };
     p.revealed[key] = !p.revealed[key];
     pushState(gameState);
   }
@@ -475,9 +509,10 @@ function toggleTrait(pid, key) {
 function revealMyTrait(key) {
   if (!gameState || !myPlayerId) return;
   const me = gameState.players.find(x => x.id === myPlayerId);
-  if (!me || !me.alive) return toast("Выбывшие не открывают карты!");
+  if (!me || !me.alive) return toast("Выбывшие игроки не могут открывать карты!");
+  if (!me.revealed) me.revealed = { prof: false, bio: false, health: false, hobby: false, phobia: false, bag: false };
   if (me.revealed[key]) return;
-  if (confirm("Открыть характеристику «" + TRAIT_NAMES[key] + "» для всех?")) {
+  if (confirm("Открыть характеристику «" + TRAIT_NAMES[key] + "» для себя и всех остальных?")) {
     me.revealed[key] = true;
     pushState(gameState);
   }
@@ -488,7 +523,7 @@ function toggleEliminate(pid) {
   const p = gameState.players.find(x => x.id === pid);
   if (p) {
     p.alive = !p.alive;
-    if (!p.alive) Object.keys(p.revealed).forEach(k => p.revealed[k] = true);
+    if (!p.alive) Object.keys(TRAIT_NAMES).forEach(k => p.revealed[k] = true);
     pushState(gameState);
   }
 }
@@ -512,7 +547,6 @@ function castVote(targetId) {
   toast("✅ Ваш голос учтён!");
 }
 
-// Строгая проверка сессии игрока при смене раунда/партии или освобождении слота
 function validatePlayerSession() {
   if (currentRole !== "player") return;
   if (!gameState || !gameState.players) {
@@ -522,7 +556,6 @@ function validatePlayerSession() {
     localStorage.removeItem("bunker_gid");
     return;
   }
-  // Если началась новая партия (сменился gameId)
   if (savedGameId !== gameState.gameId) {
     myPlayerId = null;
     savedGameId = null;
@@ -532,7 +565,6 @@ function validatePlayerSession() {
   }
   if (myPlayerId) {
     const me = gameState.players.find(p => p.id === myPlayerId);
-    // Если игрока удалили или админ освободил его карточку / её занял другой
     if (!me || me.claimedBy !== deviceId) {
       myPlayerId = null;
       localStorage.removeItem("bunker_pid");
@@ -542,6 +574,13 @@ function validatePlayerSession() {
 
 function renderAll() {
   validatePlayerSession();
+
+  // Обновляем задний фон страницы под текущее происшествие
+  if (gameState && gameState.disaster && gameState.disaster.img) {
+    document.body.style.backgroundImage = 'url("' + gameState.disaster.img + '")';
+  } else {
+    document.body.style.backgroundImage = "none";
+  }
 
   el("screenLogin").classList.toggle("active", !currentRole);
   el("logoutBtn").style.display = currentRole ? "inline-flex" : "none";
@@ -596,22 +635,28 @@ function renderAll() {
   }
 
   el("disasterBlock").style.display = "block";
+  el("disasterImg").src = gameState.disaster.img || SVG_NUCLEAR;
   el("disasterTitle").textContent = gameState.disaster.title;
   el("disasterDesc").textContent = gameState.disaster.desc;
   const alivePlayers = gameState.players.filter(p => p.alive);
   el("bunkerMeta").textContent = "Мест в бункере: " + gameState.seats + " | Живых: " + alivePlayers.length + " из " + gameState.players.length + " | " + gameState.disaster.bunker;
 
+  // Личная карточка игрока: изначально все характеристики закрыты
   if (currentRole === "player" && myPlayerId) {
     const me = gameState.players.find(p => p.id === myPlayerId);
     if (me) {
       el("mySecretCard").style.display = "block";
       el("myPlayerName").textContent = "Ваша карта: " + me.name + (me.alive ? "" : " (Выбыл)");
+      const rev = me.revealed || {};
       el("myTraitsList").innerHTML = Object.keys(TRAIT_NAMES).map(k => {
-        const isOpen = me.revealed[k];
+        const isOpen = rev[k] === true;
+        const valDisplay = isOpen
+          ? '<strong>' + me.traits[k] + '</strong>'
+          : '<span style="color:#64748b; font-style:italic;">Закрыто 🔒</span>';
         const btn = isOpen
           ? '<span style="color:var(--green); font-size:0.78rem; font-weight:700;">✅ Открыто</span>'
           : (me.alive ? '<button class="btn btn-sm btn-blue" onclick="revealMyTrait(\'' + k + '\')">👁️ Открыть</button>' : '');
-        return '<div class="trait-row"><div><span style="color:var(--muted); font-size:0.8rem;">' + TRAIT_NAMES[k] + ':</span> <strong>' + me.traits[k] + '</strong></div>' + btn + '</div>';
+        return '<div class="trait-row"><div><span style="color:var(--muted); font-size:0.8rem;">' + TRAIT_NAMES[k] + ':</span> ' + valDisplay + '</div>' + btn + '</div>';
       }).join("");
     }
   } else {
@@ -630,8 +675,9 @@ function renderAll() {
 
     const myVote = myPlayerId ? votesMap[myPlayerId] : null;
     el("voteCandidatesList").innerHTML = alivePlayers.map(cand => {
+      const rev = cand.revealed || {};
       const openList = Object.keys(TRAIT_NAMES)
-        .filter(k => cand.revealed[k])
+        .filter(k => rev[k] === true)
         .map(k => "<strong>" + TRAIT_NAMES[k] + ":</strong> " + cand.traits[k])
         .join(" • ");
       const pct = totalVotes > 0 ? Math.round((counts[cand.id] / totalVotes) * 100) : 0;
@@ -652,8 +698,9 @@ function renderAll() {
 
   const sorted = gameState.players.slice().sort((a, b) => (a.alive === b.alive ? 0 : a.alive ? -1 : 1));
   el("playersContainer").innerHTML = sorted.map(p => {
+    const rev = p.revealed || {};
     const traitsHtml = Object.keys(TRAIT_NAMES).map(k => {
-      const open = p.revealed[k];
+      const open = rev[k] === true;
       const text = (open || isAdmin()) ? p.traits[k] : '<span style="color:#475569;">Скрыто 🔒</span>';
       const btn = isAdmin() ? '<button class="btn btn-sm" style="padding:2px 7px; background:' + (open ? '#10b981' : '#334155') + '; color:' + (open ? '#000' : '#fff') + ';" onclick="toggleTrait(\'' + p.id + '\',\'' + k + '\')">' + (open ? '👁️' : '🔒') + '</button>' : '';
       return '<div class="trait-row"><div><span style="color:var(--muted); font-size:0.78rem;">' + TRAIT_NAMES[k] + ':</span> ' + text + '</div>' + btn + '</div>';
