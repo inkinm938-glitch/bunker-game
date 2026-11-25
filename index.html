@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>БУНКЕР LIVE v3.0</title>
+<title>БУНКЕР LIVE v3.1</title>
 <style>
   :root {
     --bg: #0b0f17;
@@ -30,7 +30,7 @@
   .bg-overlay {
     position: fixed;
     inset: 0;
-    background: radial-gradient(circle at top, rgba(11, 15, 23, 0.65) 0%, rgba(11, 15, 23, 0.92) 100%);
+    background: radial-gradient(circle at top, rgba(11, 15, 23, 0.55) 0%, rgba(11, 15, 23, 0.90) 100%);
     z-index: -1;
     pointer-events: none;
   }
@@ -63,7 +63,7 @@
 
   .card-box { background: var(--card); backdrop-filter: blur(8px); border: 1px solid var(--card-border); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
   .disaster-card { padding: 0; overflow: hidden; }
-  .disaster-banner { width: 100%; height: 150px; object-fit: cover; display: block; border-bottom: 1px solid var(--card-border); }
+  .disaster-banner { width: 100%; height: 155px; background-size: cover; background-position: center; border-bottom: 1px solid var(--card-border); }
   .disaster-content { padding: 16px; }
 
   .my-card { border: 2px solid var(--blue); background: rgba(19, 28, 46, 0.95); }
@@ -90,7 +90,7 @@
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v3.0</span></div>
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v3.1</span></div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button class="btn btn-sm" onclick="downloadSelfFile()">💾 Скачать файл</button>
       <span id="connStatus" class="status-pill">● Подключение...</span>
@@ -166,7 +166,7 @@
 
     <!-- КАРТОЧКА ПРОИСШЕСТВИЯ С КАРТИНКОЙ -->
     <div id="disasterBlock" class="card-box disaster-card" style="display:none;">
-      <img id="disasterImg" class="disaster-banner" alt="Происшествие">
+      <div id="disasterBannerBox" class="disaster-banner"></div>
       <div class="disaster-content">
         <h3 id="disasterTitle" style="color:var(--accent); margin-bottom:6px;"></h3>
         <p id="disasterDesc" style="font-size:0.92rem; color:#cbd5e1; margin-bottom:8px;"></p>
@@ -203,17 +203,30 @@
 <script>
 const DB_URL = "https://" + "bunker-test-846a1-default-rtdb" + ".europe-west1." + "firebasedatabase.app";
 
-const SVG_ASTEROID = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://w3.org' viewBox='0 0 1200 600'><defs><linearGradient id='g1' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#0f172a'/><stop offset='50%' stop-color='#450a0a'/><stop offset='100%' stop-color='#ea580c'/></linearGradient></defs><rect width='1200' height='600' fill='url(%23g1)'/><circle cx='900' cy='210' r='130' fill='%23fb923c' opacity='0.85'/><circle cx='875' cy='230' r='105' fill='%23431407'/><path d='M800 290 L150 600 L680 600 Z' fill='%23f97316' opacity='0.28'/><circle cx='220' cy='110' r='3' fill='%23fff' opacity='0.7'/><circle cx='420' cy='80' r='2' fill='%23fff' opacity='0.6'/><circle cx='650' cy='140' r='4' fill='%23fed7aa' opacity='0.8'/></svg>");
-const SVG_VIRUS = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://w3.org' viewBox='0 0 1200 600'><defs><linearGradient id='g2' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#022c22'/><stop offset='60%' stop-color='#064e3b'/><stop offset='100%' stop-color='#090d16'/></linearGradient></defs><rect width='1200' height='600' fill='url(%23g2)'/><circle cx='920' cy='280' r='150' fill='none' stroke='%2310b981' stroke-width='16' stroke-dasharray='45 28' opacity='0.7'/><circle cx='920' cy='280' r='65' fill='%2310b981' opacity='0.35'/><circle cx='320' cy='420' r='90' fill='none' stroke='%2334d399' stroke-width='10' stroke-dasharray='30 20' opacity='0.35'/></svg>");
-const SVG_NUCLEAR = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://w3.org' viewBox='0 0 1200 600'><defs><linearGradient id='g3' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='#1e293b'/><stop offset='55%' stop-color='#451a03'/><stop offset='100%' stop-color='#090d16'/></linearGradient></defs><rect width='1200' height='600' fill='url(%23g3)'/><ellipse cx='880' cy='210' rx='220' ry='95' fill='%23f59e0b' opacity='0.35'/><rect x='830' y='240' width='100' height='260' fill='%2378350f' opacity='0.5'/><polygon points='880,120 970,270 790,270' fill='none' stroke='%23fbbf24' stroke-width='10' opacity='0.75'/><circle cx='880' cy='220' r='22' fill='%23fbbf24' opacity='0.8'/></svg>");
-const SVG_FLOOD = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://w3.org' viewBox='0 0 1200 600'><defs><linearGradient id='g4' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='#082f49'/><stop offset='60%' stop-color='#0369a1'/><stop offset='100%' stop-color='#090d16'/></linearGradient></defs><rect width='1200' height='600' fill='url(%23g4)'/><path d='M0 340 Q 300 240 600 340 T 1200 340 L 1200 600 L 0 600 Z' fill='%230284c7' opacity='0.45'/><path d='M0 410 Q 300 330 600 410 T 1200 410 L 1200 600 L 0 600 Z' fill='%2338bdf8' opacity='0.3'/></svg>");
+function makeSvgUrl(innerSvg) {
+  const full = '<svg xmlns="http:' + '//www.w3.org/2000/svg" viewBox="0 0 1200 600">' + innerSvg + '</svg>';
+  return 'url("data:image/svg+xml;utf8,' + encodeURIComponent(full) + '")';
+}
+
+const ART_ASTEROID = makeSvgUrl("<defs><linearGradient id='g1' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#0f172a'/><stop offset='50%' stop-color='#7c2d12'/><stop offset='100%' stop-color='#ea580c'/></linearGradient></defs><rect width='1200' height='600' fill='url(#g1)'/><circle cx='920' cy='200' r='135' fill='#fb923c' opacity='0.9'/><circle cx='895' cy='220' r='108' fill='#431407'/><path d='M820 280 L120 600 L700 600 Z' fill='#f97316' opacity='0.35'/><circle cx='220' cy='110' r='4' fill='#fff' opacity='0.8'/><circle cx='420' cy='80' r='3' fill='#fff' opacity='0.7'/><circle cx='650' cy='140' r='5' fill='#fed7aa' opacity='0.9'/>");
+const ART_VIRUS = makeSvgUrl("<defs><linearGradient id='g2' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#022c22'/><stop offset='55%' stop-color='#065f46'/><stop offset='100%' stop-color='#090d16'/></linearGradient></defs><rect width='1200' height='600' fill='url(#g2)'/><circle cx='920' cy='270' r='155' fill='none' stroke='#10b981' stroke-width='18' stroke-dasharray='45 28' opacity='0.8'/><circle cx='920' cy='270' r='70' fill='#10b981' opacity='0.45'/><circle cx='300' cy='410' r='95' fill='none' stroke='#34d399' stroke-width='12' stroke-dasharray='30 20' opacity='0.45'/>");
+const ART_NUCLEAR = makeSvgUrl("<defs><linearGradient id='g3' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='#1e293b'/><stop offset='55%' stop-color='#78350f'/><stop offset='100%' stop-color='#090d16'/></linearGradient></defs><rect width='1200' height='600' fill='url(#g3)'/><ellipse cx='880' cy='210' rx='230' ry='100' fill='#f59e0b' opacity='0.42'/><rect x='830' y='240' width='100' height='260' fill='#92400e' opacity='0.55'/><polygon points='880,115 975,275 785,275' fill='none' stroke='#fbbf24' stroke-width='12' opacity='0.85'/><circle cx='880' cy='222' r='24' fill='#fbbf24' opacity='0.9'/>");
+const ART_FLOOD = makeSvgUrl("<defs><linearGradient id='g4' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='#082f49'/><stop offset='55%' stop-color='#0284c7'/><stop offset='100%' stop-color='#090d16'/></linearGradient></defs><rect width='1200' height='600' fill='url(#g4)'/><path d='M0 320 Q 300 220 600 320 T 1200 320 L 1200 600 L 0 600 Z' fill='#0ea5e9' opacity='0.5'/><path d='M0 400 Q 300 320 600 400 T 1200 400 L 1200 600 L 0 600 Z' fill='#38bdf8' opacity='0.38'/>");
 
 const DISASTERS = new Array(
-  { title: "☄️ Падение астероида «Апофис-М»", desc: "Осколок диаметром 4 км упал в Атлантику. Пыль закрыла Солнце на 3 года, температура -45°C, идут кислотные дожди.", bunker: "Срок: 2 года | Сбоит очистка воздуха, есть медотсек без врача.", img: SVG_ASTEROID },
-  { title: "☣️ Пандемия вируса «Некро-9»", desc: "Мутировавший штамм поражает нервную систему за 48 часов. Поверхность охвачена эпидемией, города закрыты на карантин.", bunker: "Срок: 1.5 года | Гермошлюз требует ручной настройки, мало антибиотиков.", img: SVG_VIRUS },
-  { title: "☢️ Ядерная зима", desc: "Глобальный обмен ударами. Высокий радиационный фон, электроника на поверхности выведена из строя, небо затянуто пеплом.", bunker: "Срок: 3 года | Есть гидропонная ферма, дизель-генератор на пределе.", img: SVG_NUCLEAR },
-  { title: "🌊 Всемирный потоп и сдвиг полюсов", desc: "Резкое таяние ледников подняло уровень океана на 80 метров. Бункер в горах, но нижние ярусы подтапливает водой.", bunker: "Срок: 2 года | Нужно следить за дренажными насосами, есть склад семян.", img: SVG_FLOOD }
+  { key: "asteroid", title: "☄️ Падение астероида «Апофис-М»", desc: "Осколок диаметром 4 км упал в Атлантику. Пыль закрыла Солнце на 3 года, температура -45°C, идут кислотные дожди.", bunker: "Срок: 2 года | Сбоит очистка воздуха, есть медотсек без врача." },
+  { key: "virus", title: "☣️ Пандемия вируса «Некро-9»", desc: "Мутировавший штамм поражает нервную систему за 48 часов. Поверхность охвачена эпидемией, города закрыты на карантин.", bunker: "Срок: 1.5 года | Гермошлюз требует ручной настройки, мало антибиотиков." },
+  { key: "nuclear", title: "☢️ Ядерная зима", desc: "Глобальный обмен ударами. Высокий радиационный фон, электроника на поверхности выведена из строя, небо затянуто пеплом.", bunker: "Срок: 3 года | Есть гидропонная ферма, дизель-генератор на пределе." },
+  { key: "flood", title: "🌊 Всемирный потоп и сдвиг полюсов", desc: "Резкое таяние ледников подняло уровень океана на 80 метров. Бункер в горах, но нижние ярусы подтапливает водой.", bunker: "Срок: 2 года | Нужно следить за дренажными насосами, есть склад семян." }
 );
+
+function getDisasterArt(d) {
+  if (!d) return ART_NUCLEAR;
+  if (d.key === "asteroid" || (d.title && d.title.includes("астероид"))) return ART_ASTEROID;
+  if (d.key === "virus" || (d.title && d.title.includes("вирус"))) return ART_VIRUS;
+  if (d.key === "flood" || (d.title && d.title.includes("потоп"))) return ART_FLOOD;
+  return ART_NUCLEAR;
+}
 
 const PROFS = new Array("Врач-хирург", "Инженер-электрик", "Агроном", "Повар-технолог", "Слесарь-сантехник", "Психолог", "Строитель", "Биохимик", "Охотник", "Спасатель МЧС", "Ветеринар", "Сварщик", "Учитель", "Программист", "Автомеханик", "Стендап-комик", "Переводчик", "Юрист", "Блогер", "Фитнес-тренер");
 const HEALTHS = new Array("Идеально здоров", "Лёгкая астма", "Близорукость -4.5", "Аллергия на пыль", "Гастрит", "Гипертония", "Плоскостопие", "Диабет 2-го типа", "Бессонница", "Носитель универсальной крови 0-");
@@ -475,7 +488,7 @@ async function createNewGame() {
     }
   }));
   await pushState({ gameId: newGameId, disaster, seats, timerEnd: null, votingOpen: false, votes: {}, players });
-  toast("🚀 Новая игра запущена! Все карты закрыты для других.");
+  toast("🚀 Новая игра запущена!");
 }
 
 function resetGameConfirm() {
@@ -576,8 +589,10 @@ function validatePlayerSession() {
 function renderAll() {
   validatePlayerSession();
 
-  if (gameState && gameState.disaster && gameState.disaster.img) {
-    document.body.style.backgroundImage = 'url("' + gameState.disaster.img + '")';
+  if (gameState && gameState.disaster) {
+    const art = getDisasterArt(gameState.disaster);
+    document.body.style.backgroundImage = art;
+    el("disasterBannerBox").style.backgroundImage = art;
   } else {
     document.body.style.backgroundImage = "none";
   }
@@ -635,13 +650,12 @@ function renderAll() {
   }
 
   el("disasterBlock").style.display = "block";
-  el("disasterImg").src = gameState.disaster.img || SVG_NUCLEAR;
   el("disasterTitle").textContent = gameState.disaster.title;
   el("disasterDesc").textContent = gameState.disaster.desc;
   const alivePlayers = gameState.players.filter(p => p.alive);
   el("bunkerMeta").textContent = "Мест в бункере: " + gameState.seats + " | Живых: " + alivePlayers.length + " из " + gameState.players.length + " | " + gameState.disaster.bunker;
 
-  // Личная карточка игрока: сам игрок видит свои данные сразу, но для всех остальных они закрыты до нажатия кнопки
+  // Личная карточка игрока: владелец видит все свои данные сразу, но для остальных они скрыты до нажатия кнопки
   if (currentRole === "player" && myPlayerId) {
     const me = gameState.players.find(p => p.id === myPlayerId);
     if (me) {
@@ -693,7 +707,6 @@ function renderAll() {
     el("votingBlock").style.display = "none";
   }
 
-  // Общий стол: для всех игроков чужие неоткрытые характеристики скрыты
   const sorted = gameState.players.slice().sort((a, b) => (a.alive === b.alive ? 0 : a.alive ? -1 : 1));
   el("playersContainer").innerHTML = sorted.map(p => {
     const rev = p.revealed || {};
