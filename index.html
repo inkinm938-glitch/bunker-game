@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>БУНКЕР LIVE v2.3</title>
+<title>БУНКЕР LIVE v2.5</title>
 <style>
   :root {
     --bg: #0b0f17;
@@ -46,22 +46,32 @@
 
   .card-box { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
   .my-card { border: 2px solid var(--blue); background: #131c2e; }
-  .trait-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px dashed rgba(255,255,255,0.08); gap: 8px; font-size: 0.9rem; }
+  .trait-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed rgba(255,255,255,0.08); gap: 8px; font-size: 0.9rem; }
   .trait-row:last-child { border-bottom: none; }
-  .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
+  .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(275px, 1fr)); gap: 12px; }
   .p-card { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; }
   .p-card.eliminated { opacity: 0.45; border-color: var(--red); }
   .timer-box { font-size: 1.4rem; font-weight: 900; background: #0b0f17; padding: 6px 14px; border-radius: 10px; border: 1px solid var(--card-border); color: var(--green); }
   .admin-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
-  .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; font-weight: 800; padding: 10px 18px; border-radius: 12px; z-index: 200; display: none; }
+
+  /* Голосование */
+  .vote-panel { background: #191528; border: 2px solid var(--accent); border-radius: 16px; padding: 16px; margin-bottom: 18px; }
+  .vote-item { background: #0f131f; border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+  .vote-item-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 8px; }
+  .vote-open-traits { font-size: 0.83rem; color: #cbd5e1; background: rgba(255,255,255,0.04); padding: 8px; border-radius: 8px; line-height: 1.45; }
+  .vote-bar-bg { height: 8px; background: #1e293b; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+  .vote-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+
+  .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; font-weight: 800; padding: 10px 18px; border-radius: 12px; z-index: 200; display: none; text-align: center; max-width: 90%; }
 </style>
 </head>
 <body>
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v2.3</span></div>
-    <div style="display:flex; gap:8px; align-items:center;">
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v2.5</span></div>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <button class="btn btn-sm" onclick="downloadSelfFile()">💾 Скачать файл</button>
       <span id="connStatus" class="status-pill">● Подключение...</span>
       <button id="logoutBtn" class="btn btn-sm btn-red" style="display:none;" onclick="logoutRole()">Выйти</button>
     </div>
@@ -89,6 +99,7 @@
   <div id="screenPickPlayer" class="screen">
     <div class="hero-box">
       <h2>Выберите своё имя</h2>
+      <p>Нажмите на себя в списке, чтобы получить карточку</p>
       <div id="playerPickList" class="role-grid"></div>
       <p id="noGameMsg" style="display:none; color:var(--accent); margin-top:12px;">Ожидание запуска игры ведущими...</p>
     </div>
@@ -127,6 +138,9 @@
         <button class="btn btn-sm btn-red" onclick="stopTimer()">⏹️ Стоп</button>
         <button class="btn btn-sm btn-red" style="margin-left:auto;" onclick="resetGameConfirm()">Новая игра</button>
       </div>
+      <div class="admin-row" style="margin-top:8px;">
+        <button id="toggleVoteBtn" class="btn btn-primary btn-block" onclick="toggleVoting()">🗳️ Открыть голосование у игроков</button>
+      </div>
     </div>
 
     <div id="disasterBlock" class="card-box" style="display:none;">
@@ -135,12 +149,24 @@
       <p id="bunkerMeta" style="font-size:0.85rem; font-weight:700; color:var(--green);"></p>
     </div>
 
+    <!-- ЛИЧНАЯ КАРТОЧКА ИГРОКА -->
     <div id="mySecretCard" class="card-box my-card" style="display:none;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:8px; flex-wrap:wrap;">
         <h3 id="myPlayerName" style="color:var(--blue);"></h3>
         <button class="btn btn-sm" onclick="changeMyPlayer()">Сменить имя</button>
       </div>
+      <p style="font-size:0.8rem; color:#93c5fd; margin-bottom:8px;">В каждом раунде вы сами выбираете, какую характеристику открыть остальным:</p>
       <div id="myTraitsList"></div>
+    </div>
+
+    <!-- ПАНЕЛЬ ГОЛОСОВАНИЯ СО СВОДКОЙ РАСКРЫТЫХ ХАРАКТЕРИСТИК -->
+    <div id="votingBlock" class="vote-panel" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+        <h3 style="color:var(--accent);">🗳️ Голосование: Кого НЕ пустим в бункер?</h3>
+        <span id="voteProgress" style="font-size:0.85rem; font-weight:700;"></span>
+      </div>
+      <p style="font-size:0.83rem; color:var(--muted); margin-bottom:12px;">Сводка уже открытых характеристик кандидатов:</p>
+      <div id="voteCandidatesList"></div>
     </div>
 
     <div id="playersContainer" class="players-grid"></div>
@@ -150,19 +176,19 @@
 <div id="toastBox" class="toast"></div>
 
 <script>
-const DB_URL = "https://" + "bunker-test-846a1-default-rtdb.europe-west1.firebasedatabase.app";
+const DB_URL = "https://" + "bunker-test-846a1-default-rtdb" + ".europe-west1." + "firebasedatabase.app";
 
-const DISASTERS = [
+const DISASTERS = new Array(
   { title: "☄️ Падение астероида", desc: "Пыль закрыла Солнце, температура -45°C, кислотные дожди.", bunker: "Срок: 2 года | Сбоит очистка воздуха, есть медотсек без врача." },
   { title: "☣️ Пандемия вируса «Некро-9»", desc: "Поверхность охвачена эпидемией, города закрыты на карантин.", bunker: "Срок: 1.5 года | Гермошлюз требует ручной настройки." },
   { title: "☢️ Ядерная зима", desc: "Высокий радиационный фон, электроника на поверхности выведена из строя.", bunker: "Срок: 3 года | Есть гидропонная ферма, дизель-генератор на пределе." }
-];
+);
 
-const PROFS = ["Врач-хирург", "Инженер-электрик", "Агроном", "Повар-технолог", "Слесарь-сантехник", "Психолог", "Строитель", "Биохимик", "Охотник", "Спасатель МЧС", "Ветеринар", "Сварщик", "Учитель", "Программист", "Автомеханик", "Стендап-комик", "Переводчик", "Юрист", "Блогер", "Фитнес-тренер"];
-const HEALTHS = ["Идеально здоров", "Лёгкая астма", "Близорукость -4.5", "Аллергия на пыль", "Гастрит", "Гипертония", "Плоскостопие", "Диабет 2-го типа", "Бессонница", "Носитель универсальной крови 0-"];
-const HOBBIES = ["Радиолюбитель", "Игра на гитаре", "Самогоноварение", "Бокс (КМС)", "Шитьё и ремонт", "Настольные игры", "Травничество", "Стрельба из лука", "Пчеловодство", "Кулинарная выпечка"];
-const PHOBIAS = ["Клаустрофобия", "Арахнофобия", "Гемофобия (боязнь крови)", "Лидерские замашки", "Перфекционист", "Подозрительность", "Вспыльчивость", "Интроверт", "Клептомания", "Гипер-оптимист"];
-const BAGS = ["Полевая аптечка", "Набор инструментов", "Семена овощей", "Ящик тушёнки", "Канистра спирта 20л", "Солнечная панель и фонари", "Фильтр для воды", "Настольные игры и книги", "Охотничье ружьё", "Сварочный аппарат"];
+const PROFS = new Array("Врач-хирург", "Инженер-электрик", "Агроном", "Повар-технолог", "Слесарь-сантехник", "Психолог", "Строитель", "Биохимик", "Охотник", "Спасатель МЧС", "Ветеринар", "Сварщик", "Учитель", "Программист", "Автомеханик", "Стендап-комик", "Переводчик", "Юрист", "Блогер", "Фитнес-тренер");
+const HEALTHS = new Array("Идеально здоров", "Лёгкая астма", "Близорукость -4.5", "Аллергия на пыль", "Гастрит", "Гипертония", "Плоскостопие", "Диабет 2-го типа", "Бессонница", "Носитель универсальной крови 0-");
+const HOBBIES = new Array("Радиолюбитель", "Игра на гитаре", "Самогоноварение", "Бокс (КМС)", "Шитьё и ремонт", "Настольные игры", "Травничество", "Стрельба из лука", "Пчеловодство", "Кулинарная выпечка");
+const PHOBIAS = new Array("Клаустрофобия", "Арахнофобия", "Гемофобия (боязнь крови)", "Лидерские замашки", "Перфекционист", "Подозрительность", "Вспыльчивость", "Интроверт", "Клептомания", "Гипер-оптимист");
+const BAGS = new Array("Полевая аптечка", "Набор инструментов", "Семена овощей", "Ящик тушёнки", "Канистра спирта 20л", "Солнечная панель и фонари", "Фильтр для воды", "Настольные игры и книги", "Охотничье ружьё", "Сварочный аппарат");
 
 const TRAIT_NAMES = { prof: "Профессия", bio: "Биология", health: "Здоровье", hobby: "Хобби", phobia: "Характер/Фобия", bag: "Багаж" };
 
@@ -171,9 +197,10 @@ let myPlayerId = localStorage.getItem("bunker_pid") || null;
 let selectedAdminSlot = 1;
 let gameState = null;
 let adminPasswords = { p1: "1111", p2: "2222" };
-let sseSource = null;
 let isPushing = false;
+let isFetching = false;
 let localVersion = 0;
+let lastHash = "";
 
 function el(id) { return document.getElementById(id); }
 function toast(msg) {
@@ -184,65 +211,52 @@ function toast(msg) {
   window._toastT = setTimeout(() => { t.style.display = "none"; }, 2600);
 }
 
-// --- ПОТОКОВАЯ СИНХРОНИЗАЦИЯ (SSE) БЕЗ ЗАДЕРЖЕК ---
-function initFastSync() {
-  if (sseSource) sseSource.close();
-  try {
-    sseSource = new EventSource(DB_URL + "/gameRoom.json");
-    sseSource.onopen = () => setOnlineStatus(true);
-    sseSource.addEventListener("put", (e) => {
-      if (isPushing) return;
-      const msg = JSON.parse(e.data);
-      if (msg.path === "/") {
-        applyRemoteData(msg.data);
-      } else {
-        fetchFullState();
-      }
-      setOnlineStatus(true);
-    });
-    sseSource.addEventListener("patch", () => {
-      if (!isPushing) fetchFullState();
-    });
-    sseSource.onerror = () => {
-      setOnlineStatus(false);
-    };
-  } catch (err) {
-    setOnlineStatus(false);
-    setInterval(() => { if (!isPushing) fetchFullState(); }, 1000);
-  }
-  fetchFullState();
+function downloadSelfFile() {
+  const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+  const blob = new Blob(new Array(htmlContent), { type: "text/html;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "index.html";
+  a.click();
+  toast("💾 Файл index.html скачан!");
 }
 
-function setOnlineStatus(ok) {
+function setOnlineStatus(ok, errText) {
   const pill = el("connStatus");
   if (ok) {
-    pill.textContent = "● Мгновенная связь (SSE)";
+    pill.textContent = "● Онлайн (0.5 сек)";
     pill.classList.remove("err");
   } else {
-    pill.textContent = "● Переподключение...";
+    pill.textContent = errText || "● Ошибка связи с базой";
     pill.classList.add("err");
   }
 }
 
-async function fetchFullState() {
-  if (isPushing) return;
+async function pollDatabase() {
+  if (isPushing || isFetching) return;
+  isFetching = true;
   try {
     const res = await fetch(DB_URL + "/gameRoom.json", { cache: "no-store" });
-    const data = await res.json();
-    applyRemoteData(data);
+    if (!res.ok) {
+      setOnlineStatus(false, "● Ошибка базы (" + res.status + ")");
+      return;
+    }
+    const text = await res.text();
     setOnlineStatus(true);
+    if (text === lastHash) return;
+    lastHash = text;
+    const data = JSON.parse(text);
+    if (data && data.passwords) adminPasswords = data.passwords;
+    const remoteState = (data && data.state) ? data.state : null;
+    if (remoteState && remoteState._ver && remoteState._ver < localVersion) return;
+    if (remoteState && remoteState._ver) localVersion = remoteState._ver;
+    gameState = remoteState;
+    renderAll();
   } catch (e) {
-    setOnlineStatus(false);
+    setOnlineStatus(false, "● Нет сети");
+  } finally {
+    isFetching = false;
   }
-}
-
-function applyRemoteData(data) {
-  if (data && data.passwords) adminPasswords = data.passwords;
-  const remoteState = (data && data.state) ? data.state : null;
-  if (remoteState && remoteState._ver && remoteState._ver < localVersion) return;
-  if (remoteState && remoteState._ver) localVersion = remoteState._ver;
-  gameState = remoteState;
-  renderAll();
 }
 
 async function pushState(newState) {
@@ -256,17 +270,18 @@ async function pushState(newState) {
   gameState = newState;
   renderAll();
   try {
-    await fetch(DB_URL + "/gameRoom/state.json", {
+    const res = await fetch(DB_URL + "/gameRoom/state.json", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newState)
     });
+    if (!res.ok) toast("⚠️ Ошибка записи: " + res.status);
+    lastHash = "";
   } finally {
-    setTimeout(() => { isPushing = false; }, 300);
+    setTimeout(() => { isPushing = false; }, 200);
   }
 }
 
-// --- АВТОРИЗАЦИЯ ---
 function openAdminAuth(slot) {
   selectedAdminSlot = slot;
   el("adminPassTitle").textContent = "Пароль для Ведущего №" + slot;
@@ -328,15 +343,14 @@ function logoutRole() {
   renderAll();
 }
 
-// --- ЛОГИКА ИГРЫ ---
 function fillPreset(n) {
-  const arr = [];
+  const arr = new Array();
   for (let i = 1; i <= n; i++) arr.push("Игрок " + i);
   el("namesInput").value = arr.join("\n");
   el("seatsInput").value = Math.floor(n / 2);
 }
 
-function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function pick(arr) { return arr.at(Math.floor(Math.random() * arr.length)); }
 
 async function createNewGame() {
   const names = el("namesInput").value.split("\n").map(s => s.trim()).filter(Boolean);
@@ -344,7 +358,7 @@ async function createNewGame() {
   const seats = parseInt(el("seatsInput").value) || Math.floor(names.length / 2);
   const disaster = pick(DISASTERS);
   const players = names.map((name, i) => ({
-    id: "p_" + i + "_" + Math.floor(Math.random() * 1000),
+    id: "p_" + i + "_" + Math.floor(Math.random() * 10000),
     name,
     alive: true,
     traits: {
@@ -357,7 +371,7 @@ async function createNewGame() {
     },
     revealed: { prof: false, bio: false, health: false, hobby: false, phobia: false, bag: false }
   }));
-  await pushState({ disaster, seats, timerEnd: null, players });
+  await pushState({ disaster, seats, timerEnd: null, votingOpen: false, votes: {}, players });
   toast("🚀 Игра запущена!");
 }
 
@@ -388,6 +402,17 @@ function toggleTrait(pid, key) {
   }
 }
 
+function revealMyTrait(key) {
+  if (!gameState || !myPlayerId) return;
+  const me = gameState.players.find(x => x.id === myPlayerId);
+  if (!me || !me.alive) return toast("Выбывшие не открывают карты!");
+  if (me.revealed[key]) return;
+  if (confirm("Открыть характеристику «" + TRAIT_NAMES[key] + "» для всех?")) {
+    me.revealed[key] = true;
+    pushState(gameState);
+  }
+}
+
 function toggleEliminate(pid) {
   if (!gameState || !isAdmin()) return;
   const p = gameState.players.find(x => x.id === pid);
@@ -398,8 +423,35 @@ function toggleEliminate(pid) {
   }
 }
 
-// --- ОТРИСОВКА ---
+function toggleVoting() {
+  if (!gameState || !isAdmin()) return;
+  gameState.votingOpen = !gameState.votingOpen;
+  if (gameState.votingOpen) {
+    gameState.votes = {};
+  }
+  pushState(gameState);
+}
+
+function castVote(targetId) {
+  if (!gameState || !myPlayerId || !gameState.votingOpen) return;
+  const me = gameState.players.find(x => x.id === myPlayerId);
+  if (!me || !me.alive) return toast("Выбывшие игроки не голосуют!");
+  if (!gameState.votes) gameState.votes = {};
+  gameState.votes[myPlayerId] = targetId;
+  pushState(gameState);
+  toast("✅ Ваш голос учтён!");
+}
+
 function renderAll() {
+  // Авто-сброс устаревшего ID игрока при старте новой партии
+  if (currentRole === "player" && myPlayerId && gameState && gameState.players) {
+    const exists = gameState.players.some(p => p.id === myPlayerId);
+    if (!exists) {
+      myPlayerId = null;
+      localStorage.removeItem("bunker_pid");
+    }
+  }
+
   el("screenLogin").classList.toggle("active", !currentRole);
   el("logoutBtn").style.display = currentRole ? "inline-flex" : "none";
 
@@ -436,30 +488,75 @@ function renderAll() {
   if (!gameState) {
     el("disasterBlock").style.display = "none";
     el("mySecretCard").style.display = "none";
+    el("votingBlock").style.display = "none";
     el("playersContainer").innerHTML = '<p style="color:var(--muted); text-align:center; grid-column:1/-1; padding:24px;">Ожидание запуска игры ведущими...</p>';
     return;
+  }
+
+  if (isAdmin()) {
+    el("toggleVoteBtn").textContent = gameState.votingOpen ? "🛑 Закрыть голосование" : "🗳️ Открыть голосование у игроков";
+    el("toggleVoteBtn").className = gameState.votingOpen ? "btn btn-red btn-block" : "btn btn-primary btn-block";
   }
 
   el("disasterBlock").style.display = "block";
   el("disasterTitle").textContent = gameState.disaster.title;
   el("disasterDesc").textContent = gameState.disaster.desc;
-  const aliveCount = gameState.players.filter(p => p.alive).length;
-  el("bunkerMeta").textContent = "Мест в бункере: " + gameState.seats + " | Живых: " + aliveCount + " из " + gameState.players.length + " | " + gameState.disaster.bunker;
+  const alivePlayers = gameState.players.filter(p => p.alive);
+  el("bunkerMeta").textContent = "Мест в бункере: " + gameState.seats + " | Живых: " + alivePlayers.length + " из " + gameState.players.length + " | " + gameState.disaster.bunker;
 
+  // Личная карточка игрока со свободным выбором открытия
   if (currentRole === "player" && myPlayerId) {
     const me = gameState.players.find(p => p.id === myPlayerId);
     if (me) {
       el("mySecretCard").style.display = "block";
-      el("myPlayerName").textContent = "Ваша карта: " + me.name;
-      el("myTraitsList").innerHTML = Object.keys(TRAIT_NAMES).map(k =>
-        '<div class="trait-row"><span style="color:var(--muted);">' + TRAIT_NAMES[k] + ':</span><strong>' + me.traits[k] + '</strong></div>'
-      ).join("");
+      el("myPlayerName").textContent = "Ваша карта: " + me.name + (me.alive ? "" : " (Выбыл)");
+      el("myTraitsList").innerHTML = Object.keys(TRAIT_NAMES).map(k => {
+        const isOpen = me.revealed[k];
+        const btn = isOpen
+          ? '<span style="color:var(--green); font-size:0.78rem; font-weight:700;">✅ Открыто</span>'
+          : (me.alive ? '<button class="btn btn-sm btn-blue" onclick="revealMyTrait(\'' + k + '\')">👁️ Открыть</button>' : '');
+        return '<div class="trait-row"><div><span style="color:var(--muted); font-size:0.8rem;">' + TRAIT_NAMES[k] + ':</span> <strong>' + me.traits[k] + '</strong></div>' + btn + '</div>';
+      }).join("");
     }
   } else {
     el("mySecretCard").style.display = "none";
   }
 
-  const sorted = [...gameState.players].sort((a, b) => (a.alive === b.alive ? 0 : a.alive ? -1 : 1));
+  // Голосование со сводкой открытых характеристик
+  if (gameState.votingOpen) {
+    el("votingBlock").style.display = "block";
+    const votesMap = gameState.votes || {};
+    const totalVotes = Object.keys(votesMap).length;
+    el("voteProgress").textContent = "Проголосовало: " + totalVotes + " из " + alivePlayers.length;
+
+    const counts = {};
+    alivePlayers.forEach(p => counts[p.id] = 0);
+    Object.values(votesMap).forEach(tid => { if (counts[tid] !== undefined) counts[tid]++; });
+
+    const myVote = myPlayerId ? votesMap[myPlayerId] : null;
+    el("voteCandidatesList").innerHTML = alivePlayers.map(cand => {
+      const openList = Object.keys(TRAIT_NAMES)
+        .filter(k => cand.revealed[k])
+        .map(k => "<strong>" + TRAIT_NAMES[k] + ":</strong> " + cand.traits[k])
+        .join(" • ");
+      const pct = totalVotes > 0 ? Math.round((counts[cand.id] / totalVotes) * 100) : 0;
+      const isMyChoice = myVote === cand.id;
+      const voteBtn = (currentRole === "player" && cand.id !== myPlayerId)
+        ? '<button class="btn btn-sm ' + (isMyChoice ? 'btn-green' : 'btn-red') + '" onclick="castVote(\'' + cand.id + '\')">' + (isMyChoice ? '✅ Ваш голос' : 'Выгнать') + '</button>'
+        : '';
+
+      return '<div class="vote-item" style="' + (isMyChoice ? 'border-color:var(--green);' : '') + '">' +
+        '<div class="vote-item-head"><strong>' + cand.name + ' <span style="color:var(--accent);">(' + counts[cand.id] + ' гол.)</span></strong>' + voteBtn + '</div>' +
+        '<div class="vote-open-traits">' + (openList || '<span style="color:var(--muted);">Пока не открыто ни одной характеристики</span>') + '</div>' +
+        '<div class="vote-bar-bg"><div class="vote-bar-fill" style="width:' + pct + '%;"></div></div>' +
+        '</div>';
+    }).join("");
+  } else {
+    el("votingBlock").style.display = "none";
+  }
+
+  // Общая сетка игроков
+  const sorted = gameState.players.slice().sort((a, b) => (a.alive === b.alive ? 0 : a.alive ? -1 : 1));
   el("playersContainer").innerHTML = sorted.map(p => {
     const traitsHtml = Object.keys(TRAIT_NAMES).map(k => {
       const open = p.revealed[k];
@@ -484,7 +581,8 @@ setInterval(() => {
   disp.textContent = String(Math.floor(diff / 60)).padStart(2, "0") + ":" + String(diff % 60).padStart(2, "0");
 }, 250);
 
-initFastSync();
+pollDatabase();
+setInterval(pollDatabase, 500);
 </script>
 </body>
 </html>
