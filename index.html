@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>БУНКЕР LIVE v3.1</title>
+<title>БУНКЕР LIVE v3.2</title>
 <style>
   :root {
     --bg: #0b0f17;
@@ -30,7 +30,7 @@
   .bg-overlay {
     position: fixed;
     inset: 0;
-    background: radial-gradient(circle at top, rgba(11, 15, 23, 0.55) 0%, rgba(11, 15, 23, 0.90) 100%);
+    background: radial-gradient(circle at top, rgba(11, 15, 23, 0.55) 0%, rgba(11, 15, 23, 0.92) 100%);
     z-index: -1;
     pointer-events: none;
   }
@@ -66,19 +66,41 @@
   .disaster-banner { width: 100%; height: 155px; background-size: cover; background-position: center; border-bottom: 1px solid var(--card-border); }
   .disaster-content { padding: 16px; }
 
+  /* Плашка раунда над таблицей */
+  .round-banner {
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.22) 0%, rgba(59, 130, 246, 0.22) 100%);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(245, 158, 11, 0.5);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .round-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.6px; color: var(--accent); font-weight: 800; margin-bottom: 2px; }
+  .round-title { font-size: 1.15rem; font-weight: 800; color: #fff; }
+
   .my-card { border: 2px solid var(--blue); background: rgba(19, 28, 46, 0.95); }
   .trait-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed rgba(255,255,255,0.08); gap: 8px; font-size: 0.9rem; }
   .trait-row:last-child { border-bottom: none; }
   .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(275px, 1fr)); gap: 12px; }
   .p-card { background: var(--card); backdrop-filter: blur(6px); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; }
   .p-card.eliminated { opacity: 0.45; border-color: var(--red); }
-  .timer-box { font-size: 1.4rem; font-weight: 900; background: #0b0f17; padding: 6px 14px; border-radius: 10px; border: 1px solid var(--card-border); color: var(--green); }
+  .timer-box { font-size: 1.45rem; font-weight: 900; font-variant-numeric: tabular-nums; background: #0b0f17; padding: 6px 14px; border-radius: 10px; border: 1px solid var(--card-border); color: var(--green); }
+  .timer-box.low { color: var(--red); border-color: var(--red); animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: 0.6; } }
   .admin-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
 
-  .vote-panel { background: rgba(25, 21, 40, 0.95); border: 2px solid var(--accent); border-radius: 16px; padding: 16px; margin-bottom: 18px; }
-  .vote-item { background: #0f131f; border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
-  .vote-item-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 8px; }
-  .vote-open-traits { font-size: 0.83rem; color: #cbd5e1; background: rgba(255,255,255,0.04); padding: 8px; border-radius: 8px; line-height: 1.45; }
+  /* Панель голосования и сводки */
+  .vote-panel { background: rgba(25, 21, 40, 0.96); border: 2px solid var(--accent); border-radius: 16px; padding: 16px; margin-bottom: 18px; }
+  .vote-item { background: #0f131f; border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; margin-bottom: 10px; transition: 0.2s; }
+  .vote-item.leader { border-color: var(--red); box-shadow: 0 0 12px rgba(239, 68, 68, 0.25); }
+  .vote-item-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px; }
+  .vote-open-traits { font-size: 0.84rem; color: #e2e8f0; background: rgba(255,255,255,0.05); padding: 9px 10px; border-radius: 8px; line-height: 1.5; }
+  .trait-chip { display: inline-block; background: rgba(59, 130, 246, 0.16); border: 1px solid rgba(59, 130, 246, 0.35); padding: 2px 8px; border-radius: 6px; margin: 2px 4px 2px 0; font-size: 0.8rem; }
   .vote-bar-bg { height: 8px; background: #1e293b; border-radius: 4px; overflow: hidden; margin-top: 8px; }
   .vote-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
 
@@ -90,7 +112,7 @@
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v3.1</span></div>
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v3.2</span></div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button class="btn btn-sm" onclick="downloadSelfFile()">💾 Скачать файл</button>
       <span id="connStatus" class="status-pill">● Подключение...</span>
@@ -147,24 +169,36 @@
       </div>
     </div>
 
+    <!-- ПУЛЬТ ВЕДУЩЕГО -->
     <div id="adminLiveControls" class="card-box" style="display:none;">
       <div class="admin-row" style="justify-content:space-between;">
         <strong style="color:var(--accent);">🎛️ Пульт ведущего</strong>
-        <div id="timerDisplay" class="timer-box">00:00</div>
+        <button class="btn btn-sm btn-red" onclick="resetGameConfirm()">Новая игра</button>
+      </div>
+      <div class="admin-row">
+        <select id="roundSelect" class="input-field" style="margin:0; flex:1; min-width:210px;" onchange="changeRoundName(this.value)">
+          <option value="Подготовка: Изучение своих карточек">Подготовка: Изучение своих карточек</option>
+          <option value="Раунд 1: Знакомство (открываем 1 любую карту)">Раунд 1: Знакомство (1 любая карта)</option>
+          <option value="Раунд 2: Открываем ещё 1–2 любые карты">Раунд 2: Ещё 1–2 любые карты</option>
+          <option value="Раунд 3: Вскрываем оставшиеся козыри">Раунд 3: Вскрываем оставшиеся козыри</option>
+          <option value="Раунд 4: Финальное раскрытие">Раунд 4: Финальное раскрытие</option>
+          <option value="Общие дебаты: Аргументы и споры">Общие дебаты: Аргументы и споры</option>
+          <option value="Голосование на вылет">Голосование на вылет</option>
+          <option value="Оправдательная речь (30 сек)">Оправдательная речь (30 сек)</option>
+        </select>
       </div>
       <div class="admin-row">
         <button class="btn btn-sm" onclick="startTimer(20)">⏱️ 20 сек</button>
         <button class="btn btn-sm" onclick="startTimer(30)">⏱️ 30 сек</button>
         <button class="btn btn-sm" onclick="startTimer(180)">⏱️ 3 мин</button>
         <button class="btn btn-sm btn-red" onclick="stopTimer()">⏹️ Стоп</button>
-        <button class="btn btn-sm btn-red" style="margin-left:auto;" onclick="resetGameConfirm()">Новая игра</button>
       </div>
       <div class="admin-row" style="margin-top:8px;">
-        <button id="toggleVoteBtn" class="btn btn-primary btn-block" onclick="toggleVoting()">🗳️ Открыть голосование у игроков</button>
+        <button id="toggleVoteBtn" class="btn btn-primary btn-block" onclick="toggleVoting()">🗳️ Открыть голосование (со сводкой карт)</button>
       </div>
     </div>
 
-    <!-- КАРТОЧКА ПРОИСШЕСТВИЯ С КАРТИНКОЙ -->
+    <!-- КАРТОЧКА ПРОИСШЕСТВИЯ -->
     <div id="disasterBlock" class="card-box disaster-card" style="display:none;">
       <div id="disasterBannerBox" class="disaster-banner"></div>
       <div class="disaster-content">
@@ -174,7 +208,7 @@
       </div>
     </div>
 
-    <!-- ЛИЧНАЯ КАРТОЧКА ИГРОКА (Видит только владелец, открывает остальным поэтапно) -->
+    <!-- ЛИЧНАЯ КАРТОЧКА ИГРОКА -->
     <div id="mySecretCard" class="card-box my-card" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:8px; flex-wrap:wrap;">
         <h3 id="myPlayerName" style="color:var(--blue);"></h3>
@@ -184,16 +218,26 @@
       <div id="myTraitsList"></div>
     </div>
 
-    <!-- ПАНЕЛЬ ГОЛОСОВАНИЯ -->
+    <!-- ПАНЕЛЬ ГОЛОСОВАНИЯ СО СВОДКОЙ ВСЕХ РАСКРЫТЫХ ХАРАКТЕРИСТИК -->
     <div id="votingBlock" class="vote-panel" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
         <h3 style="color:var(--accent);">🗳️ Голосование: Кого НЕ пустим в бункер?</h3>
-        <span id="voteProgress" style="font-size:0.85rem; font-weight:700;"></span>
+        <span id="voteProgress" style="font-size:0.85rem; font-weight:700; color:var(--green);"></span>
       </div>
-      <p style="font-size:0.83rem; color:var(--muted); margin-bottom:12px;">Сводка уже открытых характеристик кандидатов:</p>
+      <p style="font-size:0.83rem; color:var(--muted); margin-bottom:12px;">Перед выбором проверьте сводку всех уже открытых характеристик каждого кандидата:</p>
       <div id="voteCandidatesList"></div>
     </div>
 
+    <!-- НАИМЕНОВАНИЕ РАУНДА И ТАЙМЕР НАД ТАБЛИЦЕЙ ИГРОКОВ -->
+    <div id="roundBanner" class="round-banner" style="display:none;">
+      <div>
+        <div class="round-label">Текущий этап игры</div>
+        <div id="roundTitleText" class="round-title">Подготовка</div>
+      </div>
+      <div id="timerDisplay" class="timer-box">00:00</div>
+    </div>
+
+    <!-- ТАБЛИЦА ИГРОКОВ -->
     <div id="playersContainer" class="players-grid"></div>
   </div>
 </div>
@@ -487,7 +531,16 @@ async function createNewGame() {
       bag: false
     }
   }));
-  await pushState({ gameId: newGameId, disaster, seats, timerEnd: null, votingOpen: false, votes: {}, players });
+  await pushState({
+    gameId: newGameId,
+    disaster,
+    seats,
+    roundName: "Подготовка: Изучение своих карточек",
+    timerEnd: null,
+    votingOpen: false,
+    votes: {},
+    players
+  });
   toast("🚀 Новая игра запущена!");
 }
 
@@ -496,6 +549,12 @@ function resetGameConfirm() {
 }
 
 function isAdmin() { return currentRole === "admin1" || currentRole === "admin2"; }
+
+function changeRoundName(val) {
+  if (!gameState || !isAdmin()) return;
+  gameState.roundName = val;
+  pushState(gameState);
+}
 
 function startTimer(sec) {
   if (!gameState || !isAdmin()) return;
@@ -547,6 +606,9 @@ function toggleVoting() {
   gameState.votingOpen = !gameState.votingOpen;
   if (gameState.votingOpen) {
     gameState.votes = {};
+    gameState.roundName = "Голосование на вылет";
+  } else {
+    gameState.roundName = "Общие дебаты: Аргументы и споры";
   }
   pushState(gameState);
 }
@@ -640,12 +702,20 @@ function renderAll() {
     el("disasterBlock").style.display = "none";
     el("mySecretCard").style.display = "none";
     el("votingBlock").style.display = "none";
+    el("roundBanner").style.display = "none";
     el("playersContainer").innerHTML = '<p style="color:var(--muted); text-align:center; grid-column:1/-1; padding:24px;">Ожидание запуска игры ведущими...</p>';
     return;
   }
 
+  // Плашка текущего раунда над таблицей
+  el("roundBanner").style.display = "flex";
+  el("roundTitleText").textContent = gameState.roundName || "Подготовка: Изучение своих карточек";
+
   if (isAdmin()) {
-    el("toggleVoteBtn").textContent = gameState.votingOpen ? "🛑 Закрыть голосование" : "🗳️ Открыть голосование у игроков";
+    if (el("roundSelect") && gameState.roundName) {
+      el("roundSelect").value = gameState.roundName;
+    }
+    el("toggleVoteBtn").textContent = gameState.votingOpen ? "🛑 Закрыть голосование" : "🗳️ Открыть голосование (со сводкой карт)";
     el("toggleVoteBtn").className = gameState.votingOpen ? "btn btn-red btn-block" : "btn btn-primary btn-block";
   }
 
@@ -655,7 +725,6 @@ function renderAll() {
   const alivePlayers = gameState.players.filter(p => p.alive);
   el("bunkerMeta").textContent = "Мест в бункере: " + gameState.seats + " | Живых: " + alivePlayers.length + " из " + gameState.players.length + " | " + gameState.disaster.bunker;
 
-  // Личная карточка игрока: владелец видит все свои данные сразу, но для остальных они скрыты до нажатия кнопки
   if (currentRole === "player" && myPlayerId) {
     const me = gameState.players.find(p => p.id === myPlayerId);
     if (me) {
@@ -674,6 +743,7 @@ function renderAll() {
     el("mySecretCard").style.display = "none";
   }
 
+  // Голосование со сводкой всех открытых характеристик
   if (gameState.votingOpen) {
     el("votingBlock").style.display = "block";
     const votesMap = gameState.votes || {};
@@ -683,23 +753,25 @@ function renderAll() {
     const counts = {};
     alivePlayers.forEach(p => counts[p.id] = 0);
     Object.values(votesMap).forEach(tid => { if (counts[tid] !== undefined) counts[tid]++; });
+    const maxVotes = Math.max(0, ...Object.values(counts));
 
     const myVote = myPlayerId ? votesMap[myPlayerId] : null;
     el("voteCandidatesList").innerHTML = alivePlayers.map(cand => {
       const rev = cand.revealed || {};
-      const openList = Object.keys(TRAIT_NAMES)
+      const openChips = Object.keys(TRAIT_NAMES)
         .filter(k => rev[k] === true)
-        .map(k => "<strong>" + TRAIT_NAMES[k] + ":</strong> " + cand.traits[k])
-        .join(" • ");
+        .map(k => '<span class="trait-chip"><strong>' + TRAIT_NAMES[k] + ':</strong> ' + cand.traits[k] + '</span>')
+        .join("");
       const pct = totalVotes > 0 ? Math.round((counts[cand.id] / totalVotes) * 100) : 0;
       const isMyChoice = myVote === cand.id;
+      const isLeader = maxVotes > 0 && counts[cand.id] === maxVotes;
       const voteBtn = (currentRole === "player" && cand.id !== myPlayerId)
-        ? '<button class="btn btn-sm ' + (isMyChoice ? 'btn-green' : 'btn-red') + '" onclick="castVote(\'' + cand.id + '\')">' + (isMyChoice ? '✅ Ваш голос' : 'Выгнать') + '</button>'
+        ? '<button class="btn btn-sm ' + (isMyChoice ? 'btn-green' : 'btn-red') + '" onclick="castVote(\'' + cand.id + '\')">' + (isMyChoice ? '✅ Ваш голос' : 'Против') + '</button>'
         : '';
 
-      return '<div class="vote-item" style="' + (isMyChoice ? 'border-color:var(--green);' : '') + '">' +
-        '<div class="vote-item-head"><strong>' + cand.name + ' <span style="color:var(--accent);">(' + counts[cand.id] + ' гол.)</span></strong>' + voteBtn + '</div>' +
-        '<div class="vote-open-traits">' + (openList || '<span style="color:var(--muted);">Пока не открыто ни одной характеристики</span>') + '</div>' +
+      return '<div class="vote-item ' + (isLeader ? 'leader' : '') + '" style="' + (isMyChoice ? 'border-color:var(--green);' : '') + '">' +
+        '<div class="vote-item-head"><strong>' + cand.name + ' <span style="color:var(--accent);">(' + counts[cand.id] + ' гол. / ' + pct + '%)</span>' + (isLeader ? ' <span style="color:var(--red); font-size:0.78rem;">🔥 Лидер на вылет</span>' : '') + '</strong>' + voteBtn + '</div>' +
+        '<div class="vote-open-traits">' + (openChips || '<span style="color:var(--muted);">Пока не открыто ни одной характеристики</span>') + '</div>' +
         '<div class="vote-bar-bg"><div class="vote-bar-fill" style="width:' + pct + '%;"></div></div>' +
         '</div>';
     }).join("");
@@ -730,9 +802,15 @@ function renderAll() {
 setInterval(() => {
   const disp = el("timerDisplay");
   if (!disp) return;
-  if (!gameState || !gameState.timerEnd) { disp.textContent = "00:00"; return; }
+  if (!gameState || !gameState.timerEnd) {
+    disp.textContent = "00:00";
+    disp.classList.remove("low");
+    return;
+  }
   const diff = Math.max(0, Math.ceil((gameState.timerEnd - Date.now()) / 1000));
   disp.textContent = String(Math.floor(diff / 60)).padStart(2, "0") + ":" + String(diff % 60).padStart(2, "0");
+  if (diff > 0 && diff <= 10) disp.classList.add("low");
+  else disp.classList.remove("low");
 }, 250);
 
 pollDatabase();
