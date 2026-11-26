@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>БУНКЕР LIVE v4.2</title>
+<title>БУНКЕР LIVE v4.3</title>
 <style>
   :root {
     --bg: #0b0f17;
@@ -82,6 +82,7 @@
   .round-banner { background: linear-gradient(90deg, rgba(245, 158, 11, 0.22) 0%, rgba(59, 130, 246, 0.22) 100%); backdrop-filter: blur(8px); border: 1px solid rgba(245, 158, 11, 0.5); border-radius: 14px; padding: 14px 18px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
   .round-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.6px; color: var(--accent); font-weight: 800; margin-bottom: 2px; }
   .round-title { font-size: 1.15rem; font-weight: 800; color: #fff; }
+  .speaker-sub { font-size: 0.9rem; color: #fde68a; font-weight: 700; margin-top: 4px; }
 
   .my-card { border: 2px solid var(--blue); background: rgba(19, 28, 46, 0.95); }
   .trait-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed rgba(255,255,255,0.08); gap: 8px; font-size: 0.9rem; }
@@ -98,6 +99,7 @@
   .admin-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
 
   .vote-panel { background: rgba(25, 21, 40, 0.96); border: 2px solid var(--accent); border-radius: 16px; padding: 16px; margin-bottom: 18px; }
+  .vote-panel.runoff { border-color: var(--red); background: rgba(45, 16, 28, 0.96); }
   .vote-item { background: #0f131f; border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; margin-bottom: 10px; transition: 0.2s; }
   .vote-item.leader { border-color: var(--red); box-shadow: 0 0 12px rgba(239, 68, 68, 0.25); }
   .vote-item-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px; }
@@ -117,7 +119,7 @@
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v4.2</span></div>
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v4.3</span></div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button class="btn btn-sm" onclick="toggleRules(true)">📖 Правила</button>
       <button class="btn btn-sm" onclick="downloadSelfFile()">💾 Скачать файл</button>
@@ -208,7 +210,7 @@
           <option value="Раунд 3: Вскрываем оставшиеся 2 карты">Раунд 3: Оставшиеся 2 карты</option>
           <option value="Общие дебаты: Аргументы и споры">Общие дебаты: Аргументы и споры</option>
           <option value="Голосование на вылет">Голосование на вылет</option>
-          <option value="Оправдательная речь (30 сек)">Оправдательная речь (30 сек)</option>
+          <option value="Оправдательная речь (20 сек)">Оправдательная речь (20 сек)</option>
         </select>
       </div>
       <div class="admin-row">
@@ -246,10 +248,10 @@
 
     <div id="votingBlock" class="vote-panel" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
-        <h3 style="color:var(--accent);">🗳️ Тайное голосование: Кого НЕ пустим в бункер?</h3>
+        <h3 id="votePanelTitle" style="color:var(--accent);">🗳️ Тайное голосование: Кого НЕ пустим в бункер?</h3>
         <span id="voteProgress" style="font-size:0.85rem; font-weight:700; color:var(--green);"></span>
       </div>
-      <p style="font-size:0.83rem; color:var(--muted); margin-bottom:12px;">Голоса скрыты до конца раунда. Когда проголосуют все или ведущий закроет голосование, набравший больше всего голосов вылетит автоматически:</p>
+      <p id="votePanelSub" style="font-size:0.83rem; color:var(--muted); margin-bottom:12px;">Голоса скрыты до конца раунда. Когда проголосуют все или ведущий закроет голосование, набравший больше всего голосов вылетит автоматически:</p>
       <div id="voteCandidatesList"></div>
     </div>
 
@@ -257,6 +259,7 @@
       <div>
         <div class="round-label">Текущий этап игры</div>
         <div id="roundTitleText" class="round-title">Подготовка</div>
+        <div id="roundSpeakerText" class="speaker-sub" style="display:none;"></div>
       </div>
       <div id="timerDisplay" class="timer-box">00:00</div>
     </div>
@@ -273,7 +276,7 @@
       <li><strong>Секретность и открытие карт:</strong> Изначально ваши характеристики видите только вы. В каждом раунде вы сами выбираете, какую карту открыть остальным (кнопка «👁️ Открыть всем»).</li>
       <li><strong>Дебаты:</strong> После раскрытия карт даётся время на обсуждение. Защищайте свои козыри, указывайте на опасные болезни или фобии конкурентов.</li>
       <li><strong>Автоматические спецкарты:</strong> У каждого игрока есть 1 карта особого действия — при нажатии «Активировать» она сама меняет карты со случайным игроком, лечит болезнь, даёт иммунитет или двойной голос.</li>
-      <li><strong>Тайное голосование:</strong> По команде ведущих открывается голосование на телефонах со сводкой открытых карт. Набравший больше всего голосов вылетает из круга.</li>
+      <li><strong>Тайное голосование и перестрелка при ничьей:</strong> При ничьей автоматически запускается второй тур только между лидерами, и каждому из них даётся по 20 секунд на оправдательную речь.</li>
       <li><strong>Финал:</strong> Когда остаётся нужное число выживших, двери бункера закрываются, а система оценивает шансы команды на спасение.</li>
     </ul>
     <button class="btn btn-primary btn-block" onclick="toggleRules(false)">Понятно, вернуться в игру</button>
@@ -520,6 +523,7 @@ let adminPasswords = { p1: "1111", p2: "2222" };
 let isPushing = false;
 let isFetching = false;
 let isAutoFinishing = false;
+let isAdvancingDefense = false;
 let localVersion = 0;
 let lastHash = "";
 let lastShownAnnouncement = "";
@@ -580,11 +584,17 @@ async function pollDatabase() {
 
     if (gameState && gameState.votingOpen && gameState.players && !isAutoFinishing) {
       const alivePlayers = gameState.players.filter(p => p.alive);
-      const votedAliveCount = alivePlayers.filter(p => Boolean(liveVotes[p.id])).length;
-      if (alivePlayers.length > 0 && votedAliveCount >= alivePlayers.length) {
+      const runoffIds = Array.isArray(gameState.runoffCandidates) ? gameState.runoffCandidates : null;
+      const eligibleVoters = runoffIds
+        ? alivePlayers.filter(p => !runoffIds.includes(p.id))
+        : alivePlayers;
+      const votersToCount = eligibleVoters.length > 0 ? eligibleVoters : alivePlayers;
+      const votedCount = votersToCount.filter(p => Boolean(liveVotes[p.id])).length;
+
+      if (votersToCount.length > 0 && votedCount >= votersToCount.length) {
         isAutoFinishing = true;
-        finishVotingAndEliminate(gameState, liveVotes, true);
-        await pushState(gameState, {});
+        const needResetVotes = finishVotingAndEliminate(gameState, liveVotes, true);
+        await pushState(gameState, needResetVotes ? {} : undefined);
         isAutoFinishing = false;
         return;
       }
@@ -811,7 +821,10 @@ async function createNewGame() {
     seats,
     roundName: "Подготовка: Изучение своих карточек",
     timerEnd: null,
+    defenseQueue: null,
+    defenseIndex: 0,
     votingOpen: false,
+    runoffCandidates: null,
     announcement: "",
     players
   }, {});
@@ -827,17 +840,20 @@ function isAdmin() { return currentRole === "admin1" || currentRole === "admin2"
 function changeRoundName(val) {
   if (!gameState || !isAdmin()) return;
   gameState.roundName = val;
+  gameState.defenseQueue = null;
   pushState(gameState);
 }
 
 function startTimer(sec) {
   if (!gameState || !isAdmin()) return;
+  gameState.defenseQueue = null;
   gameState.timerEnd = Date.now() + sec * 1000;
   pushState(gameState);
 }
 
 function stopTimer() {
   if (!gameState || !isAdmin()) return;
+  gameState.defenseQueue = null;
   gameState.timerEnd = null;
   pushState(gameState);
 }
@@ -1001,14 +1017,17 @@ function toggleEliminate(pid) {
   }
 }
 
+// Возвращает true, если нужно сбросить голоса (запуск второго тура при ничьей)
 function finishVotingAndEliminate(stateObj, votesMap, isAuto) {
   const alive = stateObj.players.filter(p => p.alive);
+  const runoffIds = Array.isArray(stateObj.runoffCandidates) ? stateObj.runoffCandidates : null;
   const vMap = votesMap || {};
   const counts = {};
   alive.forEach(p => counts[p.id] = 0);
 
   Object.entries(vMap).forEach(([voterId, tid]) => {
     if (counts[tid] !== undefined) {
+      if (runoffIds && !runoffIds.includes(tid)) return;
       const voter = stateObj.players.find(x => x.id === voterId);
       const weight = (voter && voter.doubleVote) ? 2 : 1;
       counts[tid] += weight;
@@ -1017,8 +1036,12 @@ function finishVotingAndEliminate(stateObj, votesMap, isAuto) {
 
   stateObj.players.forEach(p => { p.doubleVote = false; });
 
-  const vulnerable = alive.filter(p => !p.hasImmunity);
-  const pool = vulnerable.length > 0 ? vulnerable : alive;
+  const baseCandidates = runoffIds
+    ? alive.filter(p => runoffIds.includes(p.id))
+    : alive;
+
+  const vulnerable = baseCandidates.filter(p => !p.hasImmunity);
+  const pool = vulnerable.length > 0 ? vulnerable : baseCandidates;
 
   let maxVotes = 0;
   pool.forEach(p => { if (counts[p.id] > maxVotes) maxVotes = counts[p.id]; });
@@ -1027,9 +1050,11 @@ function finishVotingAndEliminate(stateObj, votesMap, isAuto) {
 
   if (maxVotes === 0) {
     stateObj.votingOpen = false;
+    stateObj.runoffCandidates = null;
+    stateObj.defenseQueue = null;
     stateObj.roundName = "Общие дебаты: Аргументы и споры";
     stateObj.announcement = "Голосование закрыто без голосов (" + Date.now() + ")";
-    return;
+    return false;
   }
 
   const leaders = pool.filter(p => counts[p.id] === maxVotes);
@@ -1038,6 +1063,9 @@ function finishVotingAndEliminate(stateObj, votesMap, isAuto) {
     victim.alive = false;
     Object.keys(TRAIT_NAMES).forEach(k => victim.revealed[k] = true);
     stateObj.votingOpen = false;
+    stateObj.runoffCandidates = null;
+    stateObj.defenseQueue = null;
+    stateObj.timerEnd = null;
     const leftCount = stateObj.players.filter(p => p.alive).length;
     if (leftCount <= stateObj.seats) {
       stateObj.roundName = "ФИНАЛ: Двери бункера закрыты!";
@@ -1046,15 +1074,30 @@ function finishVotingAndEliminate(stateObj, votesMap, isAuto) {
       stateObj.roundName = "Итог голосования: " + victim.name + " выбывает из игры!";
       stateObj.announcement = "🚫 По итогам голосования (" + maxVotes + " гол.) вылетает: " + victim.name + "!";
     }
+    return false;
+  }
+
+  // Образовалась НИЧЬЯ
+  const tieNames = leaders.map(x => x.name).join(", ");
+  if (!runoffIds) {
+    // Первый тур завершился ничьей -> автоматически открываем 2-й тур только между лидерами + таймер оправдания 20 сек каждому
+    stateObj.votingOpen = true;
+    stateObj.runoffCandidates = leaders.map(x => x.id);
+    stateObj.defenseQueue = leaders.map(x => x.name);
+    stateObj.defenseIndex = 0;
+    stateObj.timerEnd = Date.now() + 20 * 1000;
+    stateObj.roundName = "⚖️ Второй тур (переголосование): " + tieNames;
+    stateObj.announcement = "⚖️ Ничья (" + maxVotes + " гол.): " + tieNames + "! Каждому по 20 сек на оправдание — голосуем только между ними!";
+    return true;
   } else {
-    const tieNames = leaders.map(x => x.name).join(", ");
-    if (isAuto) {
-      stateObj.announcement = "⚖️ Ничья (" + maxVotes + " гол.) между: " + tieNames + ". Переголосуйте или решение за ведущим!";
-    } else {
-      stateObj.votingOpen = false;
-      stateObj.roundName = "Ничья на голосовании: " + tieNames;
-      stateObj.announcement = "⚖️ Ничья (" + maxVotes + " гол.): " + tieNames + ". Ведущий решает вручную.";
-    }
+    // Повторная ничья во втором туре -> передаём финальное слово ведущим
+    stateObj.votingOpen = false;
+    stateObj.runoffCandidates = null;
+    stateObj.defenseQueue = null;
+    stateObj.timerEnd = null;
+    stateObj.roundName = "Повторная ничья: " + tieNames;
+    stateObj.announcement = "⚖️ Повторная ничья между " + tieNames + ". Итоговое решение за ведущими!";
+    return false;
   }
 }
 
@@ -1062,6 +1105,8 @@ async function toggleVoting() {
   if (!gameState || !isAdmin()) return;
   if (!gameState.votingOpen) {
     gameState.votingOpen = true;
+    gameState.runoffCandidates = null;
+    gameState.defenseQueue = null;
     gameState.roundName = "Голосование на вылет";
     await pushState(gameState, {});
   } else {
@@ -1071,9 +1116,9 @@ async function toggleVoting() {
       const data = await res.json();
       const freshState = (data && data.state) ? data.state : gameState;
       const freshVotes = (data && data.votes) ? data.votes : {};
-      finishVotingAndEliminate(freshState, freshVotes, false);
+      const needResetVotes = finishVotingAndEliminate(freshState, freshVotes, false);
       isPushing = false;
-      await pushState(freshState, {});
+      await pushState(freshState, needResetVotes ? {} : undefined);
     } finally {
       setTimeout(() => { isPushing = false; }, 200);
     }
@@ -1084,6 +1129,11 @@ async function castVote(targetId) {
   if (!gameState || !myPlayerId || !gameState.votingOpen) return;
   const me = gameState.players.find(x => x.id === myPlayerId);
   if (!me || !me.alive) return toast("Выбывшие игроки не голосуют!");
+
+  const runoffIds = Array.isArray(gameState.runoffCandidates) ? gameState.runoffCandidates : null;
+  if (runoffIds && runoffIds.includes(myPlayerId)) {
+    return toast("Кандидаты в перестрелке не голосуют!");
+  }
 
   liveVotes[myPlayerId] = targetId;
   renderAll();
@@ -1234,6 +1284,20 @@ function renderAll() {
   el("roundBanner").style.display = "flex";
   el("roundTitleText").textContent = gameState.roundName || "Подготовка: Изучение своих карточек";
 
+  const speakerEl = el("roundSpeakerText");
+  if (Array.isArray(gameState.defenseQueue) && gameState.defenseQueue.length > 0 && gameState.timerEnd) {
+    const idx = gameState.defenseIndex || 0;
+    const currentSpeaker = gameState.defenseQueue.at(idx);
+    if (currentSpeaker) {
+      speakerEl.style.display = "block";
+      speakerEl.textContent = "🎙️ Сейчас оправдывается (20 сек): " + currentSpeaker + " (" + (idx + 1) + " из " + gameState.defenseQueue.length + ")";
+    } else {
+      speakerEl.style.display = "none";
+    }
+  } else {
+    speakerEl.style.display = "none";
+  }
+
   if (isAdmin()) {
     if (el("roundSelect") && gameState.roundName) {
       el("roundSelect").value = gameState.roundName;
@@ -1284,14 +1348,35 @@ function renderAll() {
   }
 
   if (gameState.votingOpen) {
-    el("votingBlock").style.display = "block";
+    const vBlock = el("votingBlock");
+    vBlock.style.display = "block";
+    const runoffIds = Array.isArray(gameState.runoffCandidates) ? gameState.runoffCandidates : null;
+    vBlock.classList.toggle("runoff", Boolean(runoffIds));
+
+    if (runoffIds) {
+      el("votePanelTitle").textContent = "⚖️ Второй тур (переголосование): Только между лидерами!";
+      el("votePanelSub").textContent = "Каждому кандидату даётся по 20 секунд на оправдание. Остальные игроки решают, кто из них вылетает:";
+    } else {
+      el("votePanelTitle").textContent = "🗳️ Тайное голосование: Кого НЕ пустим в бункер?";
+      el("votePanelSub").textContent = "Голоса скрыты до конца раунда. Когда проголосуют все или ведущий закроет голосование, набравший больше всего голосов вылетит автоматически:";
+    }
+
+    const candidatesList = runoffIds
+      ? alivePlayers.filter(p => runoffIds.includes(p.id))
+      : alivePlayers;
+
+    const eligibleVoters = runoffIds
+      ? alivePlayers.filter(p => !runoffIds.includes(p.id))
+      : alivePlayers;
+    const votersTotal = eligibleVoters.length > 0 ? eligibleVoters.length : alivePlayers.length;
+
     const votesMap = liveVotes || {};
-    const votedCount = Object.keys(votesMap).length;
-    el("voteProgress").textContent = "Проголосовало: " + votedCount + " из " + alivePlayers.length;
+    const votedCount = eligibleVoters.filter(p => Boolean(votesMap[p.id])).length;
+    el("voteProgress").textContent = "Проголосовало: " + votedCount + " из " + votersTotal;
 
     const counts = {};
     let weightedTotal = 0;
-    alivePlayers.forEach(p => counts[p.id] = 0);
+    candidatesList.forEach(p => counts[p.id] = 0);
     Object.entries(votesMap).forEach(([voterId, tid]) => {
       if (counts[tid] !== undefined) {
         const voter = gameState.players.find(x => x.id === voterId);
@@ -1302,9 +1387,10 @@ function renderAll() {
     });
     const maxVotes = Math.max(0, ...Object.values(counts));
     const showStats = isAdmin();
+    const iAmRunoffCandidate = Boolean(runoffIds && myPlayerId && runoffIds.includes(myPlayerId));
 
     const myVote = myPlayerId ? votesMap[myPlayerId] : null;
-    el("voteCandidatesList").innerHTML = alivePlayers.map(cand => {
+    el("voteCandidatesList").innerHTML = candidatesList.map(cand => {
       const rev = cand.revealed || {};
       const openChips = Object.keys(TRAIT_NAMES)
         .filter(k => rev[k] === true)
@@ -1319,7 +1405,8 @@ function renderAll() {
         : '';
       const barHtml = showStats ? '<div class="vote-bar-bg"><div class="vote-bar-fill" style="width:' + pct + '%;"></div></div>' : '';
 
-      const voteBtn = (currentRole === "player" && cand.id !== myPlayerId)
+      const canVoteForThis = currentRole === "player" && cand.id !== myPlayerId && !iAmRunoffCandidate;
+      const voteBtn = canVoteForThis
         ? '<button class="btn btn-sm ' + (isMyChoice ? 'btn-green' : 'btn-red') + '" onclick="castVote(\'' + cand.id + '\')">' + (isMyChoice ? '✅ Ваш голос' : 'Против') + '</button>'
         : '';
 
@@ -1360,7 +1447,7 @@ function renderAll() {
   }).join("");
 }
 
-setInterval(() => {
+setInterval(async () => {
   const disp = el("timerDisplay");
   if (!disp) return;
   if (!gameState || !gameState.timerEnd) {
@@ -1377,6 +1464,29 @@ setInterval(() => {
   if (rawLeft <= 0 && lastBeepedTimerEnd !== gameState.timerEnd) {
     lastBeepedTimerEnd = gameState.timerEnd;
     playEndBeep();
+
+    // Автоматически переключаем 20-секундный таймер на следующего кандидата при ничьей
+    if (isAdmin() && Array.isArray(gameState.defenseQueue) && !isAdvancingDefense) {
+      const nextIdx = (gameState.defenseIndex || 0) + 1;
+      if (nextIdx < gameState.defenseQueue.length) {
+        isAdvancingDefense = true;
+        gameState.defenseIndex = nextIdx;
+        gameState.timerEnd = Date.now() + 20 * 1000;
+        toast("🎙️ Следующий кандидат (20 сек): " + gameState.defenseQueue.at(nextIdx));
+        await pushState(gameState);
+        isAdvancingDefense = false;
+        return;
+      } else {
+        isAdvancingDefense = true;
+        gameState.defenseQueue = null;
+        gameState.timerEnd = null;
+        toast("⏰ Оправдательные речи завершены — голосуем!");
+        await pushState(gameState);
+        isAdvancingDefense = false;
+        return;
+      }
+    }
+
     toast("⏰ Время вышло!");
   }
 }, 250);
