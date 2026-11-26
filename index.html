@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>БУНКЕР LIVE v4.7</title>
+<title>БУНКЕР LIVE v4.8</title>
 <style>
   :root {
     --bg: #0b0f17;
@@ -55,22 +55,81 @@
 
   .screen { display: none; }
   .screen.active { display: block; }
-    #screenLogin.active {
+
+  #screenLogin.active {
+    position: relative;
+    overflow: hidden;
     min-height: calc(100vh - 95px);
     display: flex;
     align-items: center;
     justify-content: center;
-    background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://w3.org' viewBox='0 0 1400 800'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23121814'/%3E%3Cstop offset='100%25' stop-color='%23090d0b'/%3E%3C/linearGradient%3E%3ClinearGradient id='door' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%23334438'/%3E%3Cstop offset='100%25' stop-color='%231e2922'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1400' height='800' fill='url(%23bg)'/%3E%3Cg transform='translate(940, 100)'%3E%3Crect x='145' y='15' width='130' height='14' rx='7' fill='%23f59e0b'/%3E%3Crect x='25' y='65' width='370' height='540' rx='175' fill='%2317201a' stroke='%23435749' stroke-width='10'/%3E%3Crect x='55' y='95' width='310' height='480' rx='145' fill='url(%23door)' stroke='%2325332a' stroke-width='6'/%3E%3Ccircle cx='210' cy='345' r='74' fill='%231c2620' stroke='%236c8273' stroke-width='12'/%3E%3Ccircle cx='210' cy='345' r='22' fill='%23435749'/%3E%3Cline x1='158' y1='293' x2='262' y2='397' stroke='%236c8273' stroke-width='12'/%3E%3Cline x1='262' y1='293' x2='158' y2='397' stroke='%236c8273' stroke-width='12'/%3E%3C/g%3E%3C/svg%3E");
-    background-size: cover;
-    background-position: center;
-    border-radius: 20px;
+    background: linear-gradient(135deg, #111814 0%, #090d0b 100%);
+    border-radius: 22px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     padding: 16px;
   }
 
+  /* Декоративная гермодверь бункера на фоне */
+  .bg-bunker-door {
+    position: absolute;
+    right: 6%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 310px;
+    height: 440px;
+    border-radius: 145px 145px 28px 28px;
+    background: linear-gradient(180deg, #27362c 0%, #17211a 100%);
+    border: 10px solid #3c4f42;
+    box-shadow: 0 30px 70px rgba(0,0,0,0.85), inset 0 0 30px rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .bg-bunker-door::before {
+    content: "";
+    position: absolute;
+    top: -32px;
+    width: 110px;
+    height: 12px;
+    border-radius: 8px;
+    background: #f59e0b;
+    box-shadow: 0 0 24px #f59e0b, 0 0 48px rgba(245, 158, 11, 0.6);
+  }
+  .bg-bunker-door::after {
+    content: "";
+    position: absolute;
+    inset: 14px;
+    border-radius: 125px 125px 18px 18px;
+    border: 3px solid rgba(108, 130, 115, 0.35);
+  }
+  .door-wheel {
+    width: 124px;
+    height: 124px;
+    border-radius: 50%;
+    border: 12px solid #5e7365;
+    background: #1a241e;
+    position: relative;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+  }
+  .door-wheel::before, .door-wheel::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: -6px;
+    right: -6px;
+    height: 10px;
+    background: #5e7365;
+    transform: translateY(-50%) rotate(45deg);
+  }
+  .door-wheel::after {
+    transform: translateY(-50%) rotate(-45deg);
+  }
 
   .hero-box {
     position: relative;
+    z-index: 2;
     overflow: hidden;
     background: linear-gradient(165deg, rgba(17, 24, 39, 0.94) 0%, rgba(9, 13, 22, 0.96) 100%);
     backdrop-filter: blur(16px);
@@ -221,7 +280,7 @@
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v4.7</span></div>
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v4.8</span></div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button class="btn btn-sm" onclick="toggleRules(true)">📖 Правила</button>
       <button class="btn btn-sm" onclick="downloadSelfFile()">💾 Скачать файл</button>
@@ -231,6 +290,7 @@
   </div>
 
   <div id="screenLogin" class="screen active">
+    <div class="bg-bunker-door"><div class="door-wheel"></div></div>
     <div class="hero-box">
       <div class="bunker-emblem">☢️</div>
       <div class="hero-kicker">Объект №404 • Гермозатвор</div>
