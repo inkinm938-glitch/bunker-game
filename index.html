@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>БУНКЕР LIVE v4.0</title>
+<title>БУНКЕР LIVE v4.1</title>
 <style>
   :root {
     --bg: #0b0f17;
-    --card: rgba(20, 27, 41, 0.92);
+    --card: rgba(20, 27, 41, 0.94);
     --card-border: #28354e;
     --accent: #f59e0b;
     --blue: #3b82f6;
@@ -31,7 +31,7 @@
   .bg-overlay {
     position: fixed;
     inset: 0;
-    background: radial-gradient(circle at top, rgba(11, 15, 23, 0.55) 0%, rgba(11, 15, 23, 0.92) 100%);
+    background: radial-gradient(circle at top, rgba(11, 15, 23, 0.52) 0%, rgba(11, 15, 23, 0.92) 100%);
     z-index: -1;
     pointer-events: none;
   }
@@ -63,9 +63,18 @@
   textarea.input-field { min-height: 110px; resize: vertical; }
 
   .card-box { background: var(--card); backdrop-filter: blur(8px); border: 1px solid var(--card-border); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
-  .disaster-card { padding: 0; overflow: hidden; }
-  .disaster-banner { width: 100%; height: 155px; background-size: cover; background-position: center; border-bottom: 1px solid var(--card-border); }
-  .disaster-content { padding: 16px; }
+
+  /* Крупная и чёткая карточка катастрофы */
+  .disaster-card { padding: 0; overflow: hidden; border: 2px solid rgba(245, 158, 11, 0.55); box-shadow: 0 12px 30px rgba(0,0,0,0.5); }
+  .disaster-banner { width: 100%; height: 185px; background-size: cover; background-position: center; border-bottom: 1px solid var(--card-border); position: relative; }
+  .disaster-tag { position: absolute; top: 12px; left: 14px; background: rgba(11, 15, 23, 0.85); color: var(--accent); border: 1px solid var(--accent); padding: 4px 10px; border-radius: 8px; font-size: 0.76rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; }
+  .disaster-content { padding: 20px; }
+  .disaster-title { color: var(--accent); font-size: 1.45rem; font-weight: 900; margin-bottom: 10px; line-height: 1.25; }
+  .disaster-desc { font-size: 1.02rem; color: #f1f5f9; line-height: 1.55; margin-bottom: 16px; }
+  .bunker-info-box { background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.45); border-radius: 12px; padding: 14px 16px; }
+  .bunker-stats-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+  .bunker-pill { background: #0b0f17; border: 1px solid rgba(16, 185, 129, 0.5); color: #34d399; font-weight: 800; font-size: 0.92rem; padding: 5px 11px; border-radius: 8px; }
+  .bunker-details { font-size: 0.96rem; color: #ecfdf5; line-height: 1.5; font-weight: 500; }
 
   .final-box { background: linear-gradient(145deg, rgba(6, 78, 59, 0.96), rgba(15, 23, 42, 0.98)); border: 2px solid var(--green); border-radius: 18px; padding: 20px; margin-bottom: 18px; box-shadow: 0 12px 32px rgba(16, 185, 129, 0.25); }
   .final-box h2 { color: var(--green); font-size: 1.4rem; margin-bottom: 8px; }
@@ -109,7 +118,7 @@
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v4.0</span></div>
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v4.1</span></div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button class="btn btn-sm" onclick="toggleRules(true)">📖 Правила</button>
       <button class="btn btn-sm" onclick="downloadSelfFile()">💾 Скачать файл</button>
@@ -145,6 +154,21 @@
   </div>
 
   <div id="screenGame" class="screen">
+    <!-- КАРТОЧКА ПРОИСШЕСТВИЯ НА САМОМ ВЕРХУ ИГРОВОГО ЭКРАНА -->
+    <div id="disasterBlock" class="card-box disaster-card" style="display:none;">
+      <div id="disasterBannerBox" class="disaster-banner">
+        <span class="disaster-tag">⚠️ Глобальная катастрофа и условия убежища</span>
+      </div>
+      <div class="disaster-content">
+        <h2 id="disasterTitle" class="disaster-title"></h2>
+        <p id="disasterDesc" class="disaster-desc"></p>
+        <div class="bunker-info-box">
+          <div id="bunkerStatsRow" class="bunker-stats-row"></div>
+          <div id="bunkerDetails" class="bunker-details"></div>
+        </div>
+      </div>
+    </div>
+
     <div id="adminSetupBox" class="card-box" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <h3 style="color:var(--accent);">⚙️ Настройка партии</h3>
@@ -206,15 +230,6 @@
       <p id="finalSurvivorsList" style="font-weight:700; color:#fff; font-size:1.05rem; margin-bottom:6px;"></p>
       <div id="finalVerdict" class="verdict-text"></div>
       <p style="font-size:0.82rem; color:#a7f3d0;">* Ведущие могут зачитать этот итог вслух для всей группы и завершить партию.</p>
-    </div>
-
-    <div id="disasterBlock" class="card-box disaster-card" style="display:none;">
-      <div id="disasterBannerBox" class="disaster-banner"></div>
-      <div class="disaster-content">
-        <h3 id="disasterTitle" style="color:var(--accent); margin-bottom:6px;"></h3>
-        <p id="disasterDesc" style="font-size:0.92rem; color:#cbd5e1; margin-bottom:8px;"></p>
-        <p id="bunkerMeta" style="font-size:0.85rem; font-weight:700; color:var(--green);"></p>
-      </div>
     </div>
 
     <div id="mySecretCard" class="card-box my-card" style="display:none;">
@@ -282,10 +297,34 @@ const ART_NUCLEAR = makeSvgUrl("<defs><linearGradient id='g3' x1='0' y1='0' x2='
 const ART_FLOOD = makeSvgUrl("<defs><linearGradient id='g4' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='#082f49'/><stop offset='55%' stop-color='#0284c7'/><stop offset='100%' stop-color='#090d16'/></linearGradient></defs><rect width='1200' height='600' fill='url(#g4)'/><path d='M0 320 Q 300 220 600 320 T 1200 320 L 1200 600 L 0 600 Z' fill='#0ea5e9' opacity='0.5'/><path d='M0 400 Q 300 320 600 400 T 1200 400 L 1200 600 L 0 600 Z' fill='#38bdf8' opacity='0.38'/>");
 
 const DISASTERS = new Array(
-  { key: "asteroid", title: "☄️ Падение астероида «Апофис-М»", desc: "Осколок диаметром 4 км упал в Атлантику. Пыль закрыла Солнце на 3 года, температура -45°C, идут кислотные дожди.", bunker: "Срок: 2 года | Сбоит очистка воздуха, есть медотсек без врача." },
-  { key: "virus", title: "☣️ Пандемия вируса «Некро-9»", desc: "Мутировавший штамм поражает нервную систему за 48 часов. Поверхность охвачена эпидемией, города закрыты на карантин.", bunker: "Срок: 1.5 года | Гермошлюз требует ручной настройки, мало антибиотиков." },
-  { key: "nuclear", title: "☢️ Ядерная зима", desc: "Глобальный обмен ударами. Высокий радиационный фон, электроника на поверхности выведена из строя, небо затянуто пеплом.", bunker: "Срок: 3 года | Есть гидропонная ферма, дизель-генератор на пределе." },
-  { key: "flood", title: "🌊 Всемирный потоп и сдвиг полюсов", desc: "Резкое таяние ледников подняло уровень океана на 80 метров. Бункер в горах, но нижние ярусы подтапливает водой.", bunker: "Срок: 2 года | Нужно следить за дренажными насосами, есть склад семян." }
+  {
+    key: "asteroid",
+    title: "☄️ Падение астероида «Апофис-М»",
+    desc: "Осколок диаметром 4 км рухнул в Атлантику. Гигантское облако пепла и пыли полностью закрыло Солнце, температура на поверхности упала до -45°C, идут кислотные дожди. Выходить наружу смертельно опасно до тех пор, пока атмосфера не очистится.",
+    stayTime: "2 года взаперти в бункере",
+    bunker: "📦 Оснащение: есть хирургический медотсек и запас консервов на 1 год.\n⚠️ Проблема убежища: сбоит система очистки воздуха, а в медотсеке нет штатного врача."
+  },
+  {
+    key: "virus",
+    title: "☣️ Пандемия вируса «Некро-9»",
+    desc: "Мутировавший воздушно-капельный штамм поражает нервную систему за 48 часов. На поверхности паника, мегаполисы закрыты на жёсткий карантин, а мародёры пытаются вскрыть любые уцелевшие убежища.",
+    stayTime: "1.5 года карантина в бункере",
+    bunker: "📦 Оснащение: автономная скважина с чистой водой и оружейный сейф.\n⚠️ Проблема убежища: гермошлюз требует ручной настройки, критически мало антибиотиков."
+  },
+  {
+    key: "nuclear",
+    title: "☢️ Глобальная ядерная зима",
+    desc: "После обмена ракетными ударами уровень радиации на поверхности зашкаливает. Вся незащищённая электроника выведена из строя электромагнитным импульсом, небо затянуто радиоактивным пеплом.",
+    stayTime: "3 года полной изоляции",
+    bunker: "📦 Оснащение: рабочая гидропонная ферма для выращивания овощей и склад топлива.\n⚠️ Проблема убежища: главный дизель-генератор работает на пределе и требует постоянного ремонта."
+  },
+  {
+    key: "flood",
+    title: "🌊 Всемирный потоп и сдвиг полюсов",
+    desc: "Резкое таяние ледников подняло уровень Мирового океана на 80 метров. Прибрежные города ушли под воду, бушуют ураганы. Ваш бункер расположен высоко в горах, но грунтовые воды подмывают нижние отсеки.",
+    stayTime: "2 года ожидания спада воды",
+    bunker: "📦 Оснащение: богатый банк семян, мастерская и радиорубка.\n⚠️ Проблема убежища: нижние ярусы подтапливает — нужно круглосуточно следить за дренажными насосами."
+  }
 );
 
 function getDisasterArt(d) {
@@ -872,7 +911,6 @@ function revealMyTrait(key) {
   }
 }
 
-// Автоматическое выполнение спецкарты прямо в базе данных
 async function activateSpecCard() {
   if (!gameState || !myPlayerId) return;
   const checkMe = gameState.players.find(x => x.id === myPlayerId);
@@ -888,7 +926,18 @@ async function activateSpecCard() {
     if (!me || !me.alive || me.specUsed) return;
 
     const others = fresh.players.filter(x => x.alive && x.id !== me.id);
-    const code = me.specCode || "heal";
+    const txt = (me.specCard || "").toLowerCase();
+    let code = me.specCode || "heal";
+    if (txt.includes("медосмотр") || txt.includes("детектор лжи")) code = "reveal_other";
+    else if (txt.includes("карьерный поворот")) code = "swap_prof";
+    else if (txt.includes("обмен здоровьем")) code = "swap_health";
+    else if (txt.includes("конфискация") || txt.includes("обмен багажом")) code = "swap_bag";
+    else if (txt.includes("иммунитет")) code = "immunity";
+    else if (txt.includes("двойной голос")) code = "double_vote";
+    else if (txt.includes("второй шанс")) code = "reroll_hobby_phobia";
+    else if (txt.includes("смена амплуа")) code = "reroll_prof";
+    else if (txt.includes("чудо-вакцина")) code = "heal";
+
     let resultMsg = "⚡ " + me.name + " применил спецкарту!";
 
     if (code === "heal") {
@@ -960,7 +1009,6 @@ function finishVotingAndEliminate(stateObj, votesMap, isAuto) {
   const counts = {};
   alive.forEach(p => counts[p.id] = 0);
 
-  // Считаем голоса с учётом двойного голоса (x2)
   Object.entries(vMap).forEach(([voterId, tid]) => {
     if (counts[tid] !== undefined) {
       const voter = stateObj.players.find(x => x.id === voterId);
@@ -969,17 +1017,14 @@ function finishVotingAndEliminate(stateObj, votesMap, isAuto) {
     }
   });
 
-  // Сбрасываем одноразовый двойной голос после подсчёта
   stateObj.players.forEach(p => { p.doubleVote = false; });
 
-  // Кандидаты без иммунитета
   const vulnerable = alive.filter(p => !p.hasImmunity);
   const pool = vulnerable.length > 0 ? vulnerable : alive;
 
   let maxVotes = 0;
-  pool.forEach(p => { if (counts[p.id] > maxVotes) maxVotes = counts[p.id]; });
+  pool.forEach(p => { if (counts[p.id] > maxVotes) maxVotes = c; });
 
-  // Сбрасываем одноразовый иммунитет после голосования
   stateObj.players.forEach(p => { p.hasImmunity = false; });
 
   if (maxVotes === 0) {
@@ -1202,7 +1247,12 @@ function renderAll() {
   el("disasterBlock").style.display = "block";
   el("disasterTitle").textContent = gameState.disaster.title;
   el("disasterDesc").textContent = gameState.disaster.desc;
-  el("bunkerMeta").textContent = "Мест в бункере: " + gameState.seats + " | Живых: " + alivePlayers.length + " из " + gameState.players.length + " | " + gameState.disaster.bunker;
+  const stayLabel = gameState.disaster.stayTime || "2 года изоляции в бункере";
+  el("bunkerStatsRow").innerHTML =
+    '<span class="bunker-pill">🚪 Мест в бункере: ' + gameState.seats + '</span>' +
+    '<span class="bunker-pill">👥 Живых игроков: ' + alivePlayers.length + ' из ' + gameState.players.length + '</span>' +
+    '<span class="bunker-pill">⏳ Срок изоляции: ' + stayLabel + '</span>';
+  el("bunkerDetails").innerHTML = (gameState.disaster.bunker || "").replace(/\n/g, "<br>");
 
   if (currentRole === "player" && myPlayerId) {
     const me = gameState.players.find(p => p.id === myPlayerId);
