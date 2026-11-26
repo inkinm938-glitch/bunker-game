@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>БУНКЕР LIVE v4.4</title>
+<title>БУНКЕР LIVE v4.6</title>
 <style>
   :root {
     --bg: #0b0f17;
@@ -55,10 +55,97 @@
 
   .screen { display: none; }
   .screen.active { display: block; }
-  .hero-box { background: var(--card); backdrop-filter: blur(8px); border: 1px solid var(--card-border); border-radius: 18px; padding: 24px; text-align: center; max-width: 460px; margin: 20px auto; }
-  .hero-box h1 { font-size: 1.6rem; margin-bottom: 8px; }
-  .hero-box p { color: var(--muted); font-size: 0.92rem; margin-bottom: 18px; }
-  .role-grid { display: flex; flex-direction: column; gap: 10px; }
+  .hero-box {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(165deg, rgba(17, 24, 39, 0.96) 0%, rgba(9, 13, 22, 0.98) 100%);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 24px;
+    padding: 32px 26px 28px;
+    text-align: center;
+    max-width: 480px;
+    margin: 28px auto;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+  .hero-box::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 5px;
+    background: repeating-linear-gradient(-45deg, #f59e0b, #f59e0b 12px, #111827 12px, #111827 24px);
+    opacity: 0.9;
+  }
+  .bunker-emblem {
+    width: 72px; height: 72px;
+    margin: 0 auto 16px;
+    border-radius: 20px;
+    background: radial-gradient(circle at 30% 30%, rgba(245, 158, 11, 0.25), rgba(15, 23, 42, 0.9));
+    border: 1px solid rgba(245, 158, 11, 0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.1rem;
+    box-shadow: 0 0 28px rgba(245, 158, 11, 0.22);
+  }
+  .hero-kicker {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .hero-box h1 {
+    font-size: 1.95rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    background: linear-gradient(180deg, #ffffff 20%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero-box p { color: var(--muted); font-size: 0.94rem; margin-bottom: 22px; line-height: 1.45; }
+  .role-grid { display: flex; flex-direction: column; gap: 12px; }
+  .role-card-btn {
+    width: 100%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-align: left;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: rgba(30, 41, 59, 0.65);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    color: #fff;
+    transition: all 0.18s ease;
+  }
+  .role-card-btn:hover {
+    transform: translateY(-2px);
+    background: rgba(30, 41, 59, 0.95);
+    border-color: rgba(245, 158, 11, 0.6);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+  }
+  .role-card-btn.player-role { border-left: 4px solid var(--green); }
+  .role-card-btn.admin1-role { border-left: 4px solid var(--accent); }
+  .role-card-btn.admin2-role { border-left: 4px solid var(--blue); }
+  .role-icon {
+    width: 42px; height: 42px;
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .role-info { flex: 1; }
+  .role-title { font-size: 1rem; font-weight: 800; color: #f8fafc; margin-bottom: 2px; }
+  .role-sub { font-size: 0.78rem; color: #94a3b8; }
+  .role-arrow { color: #64748b; font-weight: 800; font-size: 1.1rem; }
+
   .input-field { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--card-border); background: #0b0f17; color: #fff; font-size: 1rem; margin-bottom: 12px; }
   textarea.input-field { min-height: 110px; resize: vertical; }
 
@@ -119,7 +206,7 @@
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v4.4</span></div>
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v4.6</span></div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button class="btn btn-sm" onclick="toggleRules(true)">📖 Правила</button>
       <button class="btn btn-sm" onclick="downloadSelfFile()">💾 Скачать файл</button>
@@ -130,17 +217,40 @@
 
   <div id="screenLogin" class="screen active">
     <div class="hero-box">
-      <h1>Бункер Онлайн</h1>
-      <p>Выберите вашу роль для входа в игру</p>
+      <div class="bunker-emblem">☢️</div>
+      <div class="hero-kicker">Объект №404 • Гермозатвор</div>
+      <h1>БУНКЕР ОНЛАЙН</h1>
+      <p>Глобальная катастрофа началась. Выберите уровень доступа для входа в терминал убежища:</p>
       <div class="role-grid">
-        <button class="btn btn-green btn-block" onclick="selectPlayerMode()">👥 Я обычный игрок</button>
-        <button class="btn btn-primary btn-block" onclick="openAdminAuth(1)">🛡️ Ведущий №1 (Админ)</button>
-        <button class="btn btn-blue btn-block" onclick="openAdminAuth(2)">🛡️ Ведущий №2 (Админ)</button>
+        <button class="role-card-btn player-role" onclick="selectPlayerMode()">
+          <div class="role-icon">👥</div>
+          <div class="role-info">
+            <div class="role-title">Участник отбора</div>
+            <div class="role-sub">Получить секретную карточку и голосовать</div>
+          </div>
+          <div class="role-arrow">→</div>
+        </button>
+        <button class="role-card-btn admin1-role" onclick="openAdminAuth(1)">
+          <div class="role-icon">🛡️</div>
+          <div class="role-info">
+            <div class="role-title">Ведущий №1</div>
+            <div class="role-sub">Управление партией, таймером и раундами</div>
+          </div>
+          <div class="role-arrow">→</div>
+        </button>
+        <button class="role-card-btn admin2-role" onclick="openAdminAuth(2)">
+          <div class="role-icon">🎛️</div>
+          <div class="role-info">
+            <div class="role-title">Ведущий №2</div>
+            <div class="role-sub">Контроль голосования и карточек игроков</div>
+          </div>
+          <div class="role-arrow">→</div>
+        </button>
       </div>
-      <div id="adminPassBox" style="display:none; margin-top:16px; padding-top:14px; border-top:1px solid var(--card-border);">
-        <p id="adminPassTitle" style="margin-bottom:8px; font-weight:700; color:var(--accent);"></p>
-        <input type="password" id="adminPassInput" class="input-field" placeholder="Пароль ведущего">
-        <button class="btn btn-primary btn-block" onclick="submitAdminAuth()">Войти</button>
+      <div id="adminPassBox" style="display:none; margin-top:18px; padding-top:16px; border-top:1px solid var(--card-border);">
+        <p id="adminPassTitle" style="margin-bottom:10px; font-weight:800; color:var(--accent);"></p>
+        <input type="password" id="adminPassInput" class="input-field" placeholder="Введите код доступа">
+        <button class="btn btn-primary btn-block" onclick="submitAdminAuth()">Авторизоваться</button>
       </div>
     </div>
   </div>
@@ -643,7 +753,7 @@ async function pushState(newState, resetVotesObj) {
 
 function openAdminAuth(slot) {
   selectedAdminSlot = slot;
-  el("adminPassTitle").textContent = "Пароль для Ведущего №" + slot;
+  el("adminPassTitle").textContent = "Код доступа: Ведущий №" + slot;
   el("adminPassBox").style.display = "block";
   el("adminPassInput").value = "";
   el("adminPassInput").focus();
@@ -657,7 +767,7 @@ function submitAdminAuth() {
     store.setItem("bunker_role", currentRole);
     renderAll();
   } else {
-    toast("❌ Неверный пароль");
+    toast("❌ Неверный код доступа");
   }
 }
 
@@ -1385,6 +1495,8 @@ function renderAll() {
     const maxVotes = Math.max(0, ...Object.values(counts));
     const showStats = isAdmin();
     const iAmRunoffCandidate = Boolean(runoffIds && !everyoneInRunoff && myPlayerId && runoffIds.includes(myPlayerId));
+    const meObj = (currentRole === "player" && myPlayerId) ? gameState.players.find(x => x.id === myPlayerId) : null;
+    const iAmAlive = Boolean(meObj && meObj.alive);
 
     const myVote = myPlayerId ? votesMap[myPlayerId] : null;
     el("voteCandidatesList").innerHTML = candidatesList.map(cand => {
@@ -1402,7 +1514,7 @@ function renderAll() {
         : '';
       const barHtml = showStats ? '<div class="vote-bar-bg"><div class="vote-bar-fill" style="width:' + pct + '%;"></div></div>' : '';
 
-      const canVoteForThis = currentRole === "player" && cand.id !== myPlayerId && !iAmRunoffCandidate;
+      const canVoteForThis = currentRole === "player" && iAmAlive && cand.id !== myPlayerId && !iAmRunoffCandidate;
       const voteBtn = canVoteForThis
         ? '<button class="btn btn-sm ' + (isMyChoice ? 'btn-green' : 'btn-red') + '" onclick="castVote(\'' + cand.id + '\')">' + (isMyChoice ? '✅ Ваш голос' : 'Против') + '</button>'
         : (isMyChoice ? '<span style="color:var(--green); font-size:0.82rem; font-weight:800;">✅ Ваш голос</span>' : '');
