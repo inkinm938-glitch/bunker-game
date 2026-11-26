@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>БУНКЕР LIVE v4.3</title>
+<title>БУНКЕР LIVE v4.4</title>
 <style>
   :root {
     --bg: #0b0f17;
@@ -119,7 +119,7 @@
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v4.3</span></div>
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v4.4</span></div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button class="btn btn-sm" onclick="toggleRules(true)">📖 Правила</button>
       <button class="btn btn-sm" onclick="downloadSelfFile()">💾 Скачать файл</button>
@@ -585,13 +585,13 @@ async function pollDatabase() {
     if (gameState && gameState.votingOpen && gameState.players && !isAutoFinishing) {
       const alivePlayers = gameState.players.filter(p => p.alive);
       const runoffIds = Array.isArray(gameState.runoffCandidates) ? gameState.runoffCandidates : null;
-      const eligibleVoters = runoffIds
+      const everyoneInRunoff = runoffIds && runoffIds.length >= alivePlayers.length;
+      const eligibleVoters = (runoffIds && !everyoneInRunoff)
         ? alivePlayers.filter(p => !runoffIds.includes(p.id))
         : alivePlayers;
-      const votersToCount = eligibleVoters.length > 0 ? eligibleVoters : alivePlayers;
-      const votedCount = votersToCount.filter(p => Boolean(liveVotes[p.id])).length;
+      const votedCount = eligibleVoters.filter(p => Boolean(liveVotes[p.id])).length;
 
-      if (votersToCount.length > 0 && votedCount >= votersToCount.length) {
+      if (eligibleVoters.length > 0 && votedCount >= eligibleVoters.length) {
         isAutoFinishing = true;
         const needResetVotes = finishVotingAndEliminate(gameState, liveVotes, true);
         await pushState(gameState, needResetVotes ? {} : undefined);
@@ -1017,7 +1017,6 @@ function toggleEliminate(pid) {
   }
 }
 
-// Возвращает true, если нужно сбросить голоса (запуск второго тура при ничьей)
 function finishVotingAndEliminate(stateObj, votesMap, isAuto) {
   const alive = stateObj.players.filter(p => p.alive);
   const runoffIds = Array.isArray(stateObj.runoffCandidates) ? stateObj.runoffCandidates : null;
@@ -1077,10 +1076,8 @@ function finishVotingAndEliminate(stateObj, votesMap, isAuto) {
     return false;
   }
 
-  // Образовалась НИЧЬЯ
   const tieNames = leaders.map(x => x.name).join(", ");
   if (!runoffIds) {
-    // Первый тур завершился ничьей -> автоматически открываем 2-й тур только между лидерами + таймер оправдания 20 сек каждому
     stateObj.votingOpen = true;
     stateObj.runoffCandidates = leaders.map(x => x.id);
     stateObj.defenseQueue = leaders.map(x => x.name);
@@ -1090,7 +1087,6 @@ function finishVotingAndEliminate(stateObj, votesMap, isAuto) {
     stateObj.announcement = "⚖️ Ничья (" + maxVotes + " гол.): " + tieNames + "! Каждому по 20 сек на оправдание — голосуем только между ними!";
     return true;
   } else {
-    // Повторная ничья во втором туре -> передаём финальное слово ведущим
     stateObj.votingOpen = false;
     stateObj.runoffCandidates = null;
     stateObj.defenseQueue = null;
@@ -1131,7 +1127,8 @@ async function castVote(targetId) {
   if (!me || !me.alive) return toast("Выбывшие игроки не голосуют!");
 
   const runoffIds = Array.isArray(gameState.runoffCandidates) ? gameState.runoffCandidates : null;
-  if (runoffIds && runoffIds.includes(myPlayerId)) {
+  const aliveCount = gameState.players.filter(p => p.alive).length;
+  if (runoffIds && runoffIds.length < aliveCount && runoffIds.includes(myPlayerId)) {
     return toast("Кандидаты в перестрелке не голосуют!");
   }
 
@@ -1351,6 +1348,7 @@ function renderAll() {
     const vBlock = el("votingBlock");
     vBlock.style.display = "block";
     const runoffIds = Array.isArray(gameState.runoffCandidates) ? gameState.runoffCandidates : null;
+    const everyoneInRunoff = runoffIds && runoffIds.length >= alivePlayers.length;
     vBlock.classList.toggle("runoff", Boolean(runoffIds));
 
     if (runoffIds) {
@@ -1365,14 +1363,13 @@ function renderAll() {
       ? alivePlayers.filter(p => runoffIds.includes(p.id))
       : alivePlayers;
 
-    const eligibleVoters = runoffIds
+    const eligibleVoters = (runoffIds && !everyoneInRunoff)
       ? alivePlayers.filter(p => !runoffIds.includes(p.id))
       : alivePlayers;
-    const votersTotal = eligibleVoters.length > 0 ? eligibleVoters.length : alivePlayers.length;
 
     const votesMap = liveVotes || {};
     const votedCount = eligibleVoters.filter(p => Boolean(votesMap[p.id])).length;
-    el("voteProgress").textContent = "Проголосовало: " + votedCount + " из " + votersTotal;
+    el("voteProgress").textContent = "Проголосовало: " + votedCount + " из " + eligibleVoters.length;
 
     const counts = {};
     let weightedTotal = 0;
@@ -1387,7 +1384,7 @@ function renderAll() {
     });
     const maxVotes = Math.max(0, ...Object.values(counts));
     const showStats = isAdmin();
-    const iAmRunoffCandidate = Boolean(runoffIds && myPlayerId && runoffIds.includes(myPlayerId));
+    const iAmRunoffCandidate = Boolean(runoffIds && !everyoneInRunoff && myPlayerId && runoffIds.includes(myPlayerId));
 
     const myVote = myPlayerId ? votesMap[myPlayerId] : null;
     el("voteCandidatesList").innerHTML = candidatesList.map(cand => {
@@ -1408,7 +1405,7 @@ function renderAll() {
       const canVoteForThis = currentRole === "player" && cand.id !== myPlayerId && !iAmRunoffCandidate;
       const voteBtn = canVoteForThis
         ? '<button class="btn btn-sm ' + (isMyChoice ? 'btn-green' : 'btn-red') + '" onclick="castVote(\'' + cand.id + '\')">' + (isMyChoice ? '✅ Ваш голос' : 'Против') + '</button>'
-        : '';
+        : (isMyChoice ? '<span style="color:var(--green); font-size:0.82rem; font-weight:800;">✅ Ваш голос</span>' : '');
 
       return '<div class="vote-item ' + ((showStats && isLeader) ? 'leader' : '') + '" style="' + (isMyChoice ? 'border-color:var(--green);' : '') + '">' +
         '<div class="vote-item-head"><strong>' + cand.name + immTag + statsHtml + '</strong>' + voteBtn + '</div>' +
@@ -1465,7 +1462,6 @@ setInterval(async () => {
     lastBeepedTimerEnd = gameState.timerEnd;
     playEndBeep();
 
-    // Автоматически переключаем 20-секундный таймер на следующего кандидата при ничьей
     if (isAdmin() && Array.isArray(gameState.defenseQueue) && !isAdvancingDefense) {
       const nextIdx = (gameState.defenseIndex || 0) + 1;
       if (nextIdx < gameState.defenseQueue.length) {
