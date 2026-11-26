@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>БУНКЕР LIVE v3.8</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>БУНКЕР LIVE v3.9</title>
 <style>
   :root {
     --bg: #0b0f17;
@@ -107,7 +108,7 @@
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v3.8</span></div>
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v3.9</span></div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button class="btn btn-sm" onclick="toggleRules(true)">📖 Правила</button>
       <button class="btn btn-sm" onclick="downloadSelfFile()">💾 Скачать файл</button>
@@ -266,7 +267,7 @@
 </div>
 
 <div id="toastBox" class="toast"></div>
-  <script>
+<script>
 const DB_URL = "https://" + "bunker-test-846a1-default-rtdb" + ".europe-west1." + "firebasedatabase.app";
 
 function makeSvgUrl(innerSvg) {
@@ -465,20 +466,23 @@ function pickUniqueFrom(arr, usedList) {
   const pool = unused.length > 0 ? unused : arr;
   return pool.at(Math.floor(Math.random() * pool.length));
 }
-let deviceId = localStorage.getItem("bunker_device_id");
+const store = window.sessionStorage;
+let deviceId = store.getItem("bunker_device_id");
 if (!deviceId) {
-  deviceId = "dev_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
-  localStorage.setItem("bunker_device_id", deviceId);
+  deviceId = "dev_" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
+  store.setItem("bunker_device_id", deviceId);
 }
 
-let currentRole = localStorage.getItem("bunker_role") || null;
-let myPlayerId = localStorage.getItem("bunker_pid") || null;
-let savedGameId = localStorage.getItem("bunker_gid") || null;
+let currentRole = store.getItem("bunker_role") || null;
+let myPlayerId = store.getItem("bunker_pid") || null;
+let savedGameId = store.getItem("bunker_gid") || null;
 let selectedAdminSlot = 1;
 let gameState = null;
+let liveVotes = {};
 let adminPasswords = { p1: "1111", p2: "2222" };
 let isPushing = false;
 let isFetching = false;
+let isAutoFinishing = false;
 let localVersion = 0;
 let lastHash = "";
 let lastShownAnnouncement = "";
@@ -520,7 +524,7 @@ async function pollDatabase() {
   if (isPushing || isFetching) return;
   isFetching = true;
   try {
-    const res = await fetch(DB_URL + "/gameRoom.json", { cache: "no-store" });
+    const res = await fetch(DB_URL + "/gameRoom.json?t=" + Date.now(), { cache: "no-store" });
     if (!res.ok) {
       setOnlineStatus(false, "● Ошибка базы (" + res.status + ")");
       return;
@@ -535,6 +539,21 @@ async function pollDatabase() {
     if (remoteState && remoteState._ver && remoteState._ver < localVersion) return;
     if (remoteState && remoteState._ver) localVersion = remoteState._ver;
     gameState = remoteState;
+    liveVotes = (data && data.votes && typeof data.votes === "object") ? data.votes : {};
+
+    // Если открыто голосование и все живые игроки уже отдали голоса — любой клиент/админ фиксирует итог
+    if (gameState && gameState.votingOpen && gameState.players && !isAutoFinishing) {
+      const alivePlayers = gameState.players.filter(p => p.alive);
+      const votedAliveCount = alivePlayers.filter(p => Boolean(liveVotes[p.id])).length;
+      if (alivePlayers.length > 0 && votedAliveCount >= alivePlayers.length) {
+        isAutoFinishing = true;
+        finishVotingAndEliminate(gameState, liveVotes, true);
+        await pushState(gameState, {});
+        isAutoFinishing = false;
+        return;
+      }
+    }
+
     renderAll();
   } catch (e) {
     setOnlineStatus(false, "● Нет сети");
@@ -543,7 +562,7 @@ async function pollDatabase() {
   }
 }
 
-async function pushState(newState) {
+async function pushState(newState, resetVotesObj) {
   isPushing = true;
   if (newState) {
     localVersion = Date.now();
@@ -552,6 +571,9 @@ async function pushState(newState) {
     localVersion = 0;
   }
   gameState = newState;
+  if (resetVotesObj !== undefined) {
+    liveVotes = resetVotesObj || {};
+  }
   renderAll();
   try {
     const res = await fetch(DB_URL + "/gameRoom/state.json", {
@@ -559,10 +581,17 @@ async function pushState(newState) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newState)
     });
+    if (resetVotesObj !== undefined) {
+      await fetch(DB_URL + "/gameRoom/votes.json", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(resetVotesObj)
+      });
+    }
     if (!res.ok) toast("⚠️ Ошибка записи: " + res.status);
     lastHash = "";
   } finally {
-    setTimeout(() => { isPushing = false; }, 200);
+    setTimeout(() => { isPushing = false; }, 180);
   }
 }
 
@@ -579,7 +608,7 @@ function submitAdminAuth() {
   const expected = selectedAdminSlot === 1 ? adminPasswords.p1 : adminPasswords.p2;
   if (val === expected) {
     currentRole = selectedAdminSlot === 1 ? "admin1" : "admin2";
-    localStorage.setItem("bunker_role", currentRole);
+    store.setItem("bunker_role", currentRole);
     renderAll();
   } else {
     toast("❌ Неверный пароль");
@@ -602,7 +631,7 @@ async function changePasswordsPrompt() {
 
 function selectPlayerMode() {
   currentRole = "player";
-  localStorage.setItem("bunker_role", "player");
+  store.setItem("bunker_role", "player");
   validatePlayerSession();
   renderAll();
 }
@@ -611,7 +640,7 @@ async function claimPlayerCard(pid) {
   if (!gameState || !gameState.players) return;
   isFetching = true;
   try {
-    const res = await fetch(DB_URL + "/gameRoom/state.json", { cache: "no-store" });
+    const res = await fetch(DB_URL + "/gameRoom/state.json?t=" + Date.now(), { cache: "no-store" });
     const freshState = await res.json();
     if (!freshState || !freshState.players) return;
     const target = freshState.players.find(p => p.id === pid);
@@ -630,8 +659,8 @@ async function claimPlayerCard(pid) {
     target.claimedBy = deviceId;
     myPlayerId = pid;
     savedGameId = freshState.gameId;
-    localStorage.setItem("bunker_pid", pid);
-    localStorage.setItem("bunker_gid", savedGameId);
+    store.setItem("bunker_pid", pid);
+    store.setItem("bunker_gid", savedGameId);
     isFetching = false;
     await pushState(freshState);
     toast("✅ Карточка закреплена за вами!");
@@ -651,7 +680,7 @@ async function releaseAndChangeMyPlayer() {
     }
   }
   myPlayerId = null;
-  localStorage.removeItem("bunker_pid");
+  store.removeItem("bunker_pid");
   renderAll();
 }
 
@@ -676,9 +705,9 @@ async function logoutRole() {
   currentRole = null;
   myPlayerId = null;
   savedGameId = null;
-  localStorage.removeItem("bunker_role");
-  localStorage.removeItem("bunker_pid");
-  localStorage.removeItem("bunker_gid");
+  store.removeItem("bunker_role");
+  store.removeItem("bunker_pid");
+  store.removeItem("bunker_gid");
   el("adminPassBox").style.display = "none";
   renderAll();
 }
@@ -741,15 +770,14 @@ async function createNewGame() {
     roundName: "Подготовка: Изучение своих карточек",
     timerEnd: null,
     votingOpen: false,
-    votes: {},
     announcement: "",
     players
-  });
+  }, {});
   toast("🚀 Новая игра запущена! Все карточки уникальны.");
 }
 
 function resetGameConfirm() {
-  if (confirm("Завершить текущую игру?")) pushState(null);
+  if (confirm("Завершить текущую игру?")) pushState(null, {});
 }
 
 function isAdmin() { return currentRole === "admin1" || currentRole === "admin2"; }
@@ -860,12 +888,12 @@ function toggleEliminate(pid) {
   }
 }
 
-function finishVotingAndEliminate(stateObj, isAuto) {
+function finishVotingAndEliminate(stateObj, votesMap, isAuto) {
   const alive = stateObj.players.filter(p => p.alive);
-  const votesMap = stateObj.votes || {};
+  const vMap = votesMap || {};
   const counts = {};
   alive.forEach(p => counts[p.id] = 0);
-  Object.values(votesMap).forEach(tid => {
+  Object.values(vMap).forEach(tid => {
     if (counts[tid] !== undefined) counts[tid]++;
   });
 
@@ -905,16 +933,25 @@ function finishVotingAndEliminate(stateObj, isAuto) {
   }
 }
 
-function toggleVoting() {
+async function toggleVoting() {
   if (!gameState || !isAdmin()) return;
   if (!gameState.votingOpen) {
     gameState.votingOpen = true;
-    gameState.votes = {};
     gameState.roundName = "Голосование на вылет";
-    pushState(gameState);
+    await pushState(gameState, {});
   } else {
-    finishVotingAndEliminate(gameState, false);
-    pushState(gameState);
+    isPushing = true;
+    try {
+      const res = await fetch(DB_URL + "/gameRoom.json?t=" + Date.now(), { cache: "no-store" });
+      const data = await res.json();
+      const freshState = (data && data.state) ? data.state : gameState;
+      const freshVotes = (data && data.votes) ? data.votes : {};
+      finishVotingAndEliminate(freshState, freshVotes, false);
+      isPushing = false;
+      await pushState(freshState, {});
+    } finally {
+      setTimeout(() => { isPushing = false; }, 200);
+    }
   }
 }
 
@@ -923,36 +960,20 @@ async function castVote(targetId) {
   const me = gameState.players.find(x => x.id === myPlayerId);
   if (!me || !me.alive) return toast("Выбывшие игроки не голосуют!");
 
-  isPushing = true;
+  // Пишем ТОЛЬКО в изолированную ветку /gameRoom/votes/ИД_ИГРОКА.json
+  // state.json вообще не трогается, поэтому два телефона никогда не затрут друг друга
+  liveVotes[myPlayerId] = targetId;
+  renderAll();
   try {
-    await fetch(DB_URL + "/gameRoom/state/votes/" + myPlayerId + ".json", {
+    await fetch(DB_URL + "/gameRoom/votes/" + myPlayerId + ".json", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(targetId)
     });
-
-    const res = await fetch(DB_URL + "/gameRoom/state.json", { cache: "no-store" });
-    const freshState = await res.json();
-    if (!freshState) return;
-    if (!freshState.votes) freshState.votes = {};
-    freshState.votes[myPlayerId] = targetId;
-
-    const alivePlayers = freshState.players.filter(p => p.alive);
-    const votedAliveCount = alivePlayers.filter(p => Boolean(freshState.votes[p.id])).length;
-
-    if (freshState.votingOpen && votedAliveCount >= alivePlayers.length) {
-      finishVotingAndEliminate(freshState, true);
-      await pushState(freshState);
-    } else {
-      gameState = freshState;
-      lastHash = "";
-      renderAll();
-    }
+    lastHash = "";
     toast("✅ Ваш голос учтён!");
   } catch (e) {
-    toast("⚠️ Ошибка сети при голосовании, нажмите ещё раз");
-  } finally {
-    setTimeout(() => { isPushing = false; }, 150);
+    toast("⚠️ Ошибка сети, нажмите ещё раз");
   }
 }
 
@@ -992,22 +1013,22 @@ function validatePlayerSession() {
   if (!gameState || !gameState.players) {
     myPlayerId = null;
     savedGameId = null;
-    localStorage.removeItem("bunker_pid");
-    localStorage.removeItem("bunker_gid");
+    store.removeItem("bunker_pid");
+    store.removeItem("bunker_gid");
     return;
   }
   if (savedGameId !== gameState.gameId) {
     myPlayerId = null;
     savedGameId = null;
-    localStorage.removeItem("bunker_pid");
-    localStorage.removeItem("bunker_gid");
+    store.removeItem("bunker_pid");
+    store.removeItem("bunker_gid");
     return;
   }
   if (myPlayerId) {
     const me = gameState.players.find(p => p.id === myPlayerId);
     if (!me || me.claimedBy !== deviceId) {
       myPlayerId = null;
-      localStorage.removeItem("bunker_pid");
+      store.removeItem("bunker_pid");
     }
   }
 }
@@ -1136,7 +1157,7 @@ function renderAll() {
 
   if (gameState.votingOpen) {
     el("votingBlock").style.display = "block";
-    const votesMap = gameState.votes || {};
+    const votesMap = liveVotes || {};
     const totalVotes = Object.keys(votesMap).length;
     el("voteProgress").textContent = "Проголосовало: " + totalVotes + " из " + alivePlayers.length;
 
@@ -1220,4 +1241,3 @@ setInterval(pollDatabase, 500);
 </script>
 </body>
 </html>
-
