@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>БУНКЕР LIVE v4.6</title>
+<title>БУНКЕР LIVE v4.7</title>
 <style>
   :root {
     --bg: #0b0f17;
@@ -55,17 +55,31 @@
 
   .screen { display: none; }
   .screen.active { display: block; }
+  #screenLogin.active {
+    min-height: calc(100vh - 95px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://w3.org' viewBox='0 0 1400 800'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23121814'/%3E%3Cstop offset='100%25' stop-color='%23090d0b'/%3E%3C/linearGradient%3E%3ClinearGradient id='door' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%23334438'/%3E%3Cstop offset='100%25' stop-color='%231e2922'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1400' height='800' fill='url(%23bg)'/%3E%3Cg transform='translate(880, 90)'%3E%3Crect x='145' y='15' width='130' height='14' rx='7' fill='%23f59e0b'/%3E%3Crect x='145' y='15' width='130' height='14' rx='7' fill='%23fbbf24' opacity='0.5'/%3E%3Crect x='25' y='65' width='370' height='540' rx='175' fill='%2317201a' stroke='%23435749' stroke-width='10'/%3E%3Crect x='55' y='95' width='310' height='480' rx='145' fill='url(%23door)' stroke='%2325332a' stroke-width='6'/%3E%3Ccircle cx='210' cy='345' r='74' fill='%231c2620' stroke='%236c8273' stroke-width='12'/%3E%3Ccircle cx='210' cy='345' r='22' fill='%23435749'/%3E%3Cline x1='158' y1='293' x2='262' y2='397' stroke='%236c8273' stroke-width='12'/%3E%3Cline x1='262' y1='293' x2='158' y2='397' stroke='%236c8273' stroke-width='12'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: cover;
+    background-position: center;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 16px;
+  }
+
   .hero-box {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(165deg, rgba(17, 24, 39, 0.96) 0%, rgba(9, 13, 22, 0.98) 100%);
+    background: linear-gradient(165deg, rgba(17, 24, 39, 0.94) 0%, rgba(9, 13, 22, 0.96) 100%);
     backdrop-filter: blur(16px);
     border: 1px solid rgba(245, 158, 11, 0.35);
     border-radius: 24px;
     padding: 32px 26px 28px;
     text-align: center;
     max-width: 480px;
-    margin: 28px auto;
+    width: 100%;
+    margin: 12px auto;
     box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
   .hero-box::before {
@@ -206,7 +220,7 @@
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v4.6</span></div>
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v4.7</span></div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button class="btn btn-sm" onclick="toggleRules(true)">📖 Правила</button>
       <button class="btn btn-sm" onclick="downloadSelfFile()">💾 Скачать файл</button>
@@ -316,7 +330,7 @@
         <select id="roundSelect" class="input-field" style="margin:0; flex:1; min-width:210px;" onchange="changeRoundName(this.value)">
           <option value="Подготовка: Изучение своих карточек">Подготовка: Изучение своих карточек</option>
           <option value="Раунд 1: Знакомство (открываем по 2 карты)">Раунд 1: Знакомство (по 2 карты)</option>
-          <option value="Раунд 2: Второе раскрытие (ещё по 2 карты)">Раунд 2: Второе раскрытие (ещё 2 карты)</option>
+          <option value="Раунд 2: Второе раскрытие (ещё по 2 карты)">Раунд 2: Второе раскрытие (ещё по 2 карты)</option>
           <option value="Раунд 3: Вскрываем оставшиеся 2 карты">Раунд 3: Оставшиеся 2 карты</option>
           <option value="Общие дебаты: Аргументы и споры">Общие дебаты: Аргументы и споры</option>
           <option value="Голосование на вылет">Голосование на вылет</option>
