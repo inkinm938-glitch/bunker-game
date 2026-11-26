@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>БУНКЕР LIVE v3.7</title>
+<title>БУНКЕР LIVE v3.8</title>
 <style>
   :root {
     --bg: #0b0f17;
@@ -107,7 +107,7 @@
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v3.7</span></div>
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v3.8</span></div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button class="btn btn-sm" onclick="toggleRules(true)">📖 Правила</button>
       <button class="btn btn-sm" onclick="downloadSelfFile()">💾 Скачать файл</button>
@@ -159,13 +159,13 @@
           </select>
         </div>
         <div class="admin-row">
-          <button class="btn btn-sm" onclick="fillPreset(15)">15 игроков</button>
-          <button class="btn btn-sm" onclick="fillPreset(18)">18 игроков</button>
-          <button class="btn btn-sm" onclick="fillPreset(22)">22 игрока</button>
+          <button class="btn btn-sm" onclick="fillPreset(15)">15 игроков (9 мест)</button>
+          <button class="btn btn-sm" onclick="fillPreset(18)">18 игроков (11 мест)</button>
+          <button class="btn btn-sm" onclick="fillPreset(22)">22 игрока (13 мест)</button>
         </div>
         <textarea id="namesInput" class="input-field" placeholder="Имена игроков (каждое с новой строки)"></textarea>
         <div class="admin-row">
-          <label>Мест в бункере: <input type="number" id="seatsInput" value="8" min="2" max="20" style="width:60px; padding:6px; border-radius:8px; background:#0b0f17; color:#fff; border:1px solid var(--card-border);"></label>
+          <label>Мест в бункере: <input type="number" id="seatsInput" value="9" min="2" max="20" style="width:60px; padding:6px; border-radius:8px; background:#0b0f17; color:#fff; border:1px solid var(--card-border);"></label>
           <button class="btn btn-green" style="flex:1;" onclick="createNewGame()">🚀 Создать игру</button>
         </div>
       </div>
@@ -179,10 +179,9 @@
       <div class="admin-row">
         <select id="roundSelect" class="input-field" style="margin:0; flex:1; min-width:210px;" onchange="changeRoundName(this.value)">
           <option value="Подготовка: Изучение своих карточек">Подготовка: Изучение своих карточек</option>
-          <option value="Раунд 1: Знакомство (открываем 1 любую карту)">Раунд 1: Знакомство (1 любая карта)</option>
-          <option value="Раунд 2: Открываем ещё 1–2 любые карты">Раунд 2: Ещё 1–2 любые карты</option>
-          <option value="Раунд 3: Вскрываем оставшиеся козыри">Раунд 3: Вскрываем оставшиеся козыри</option>
-          <option value="Раунд 4: Финальное раскрытие">Раунд 4: Финальное раскрытие</option>
+          <option value="Раунд 1: Знакомство (открываем по 2 карты)">Раунд 1: Знакомство (по 2 карты)</option>
+          <option value="Раунд 2: Второе раскрытие (ещё по 2 карты)">Раунд 2: Второе раскрытие (ещё 2 карты)</option>
+          <option value="Раунд 3: Вскрываем оставшиеся 2 карты">Раунд 3: Оставшиеся 2 карты</option>
           <option value="Общие дебаты: Аргументы и споры">Общие дебаты: Аргументы и споры</option>
           <option value="Голосование на вылет">Голосование на вылет</option>
           <option value="Оправдательная речь (30 сек)">Оправдательная речь (30 сек)</option>
@@ -254,7 +253,7 @@
 <div id="rulesModal" class="modal-bg" onclick="if(event.target===this) toggleRules(false)">
   <div class="modal-card">
     <h2 style="color:var(--accent); margin-bottom:12px;">📖 Правила игры «Бункер»</h2>
-    <p style="font-size:0.92rem; line-height:1.5; margin-bottom:10px;"><strong>Цель игры:</strong> На Земле произошла глобальная катастрофа. Рядом есть бункер, но мест в нём ровно в два раза меньше, чем игроков. Ваша задача — доказать остальным, что именно вы нужны для выживания внутри и восстановления жизни снаружи.</p>
+    <p style="font-size:0.92rem; line-height:1.5; margin-bottom:10px;"><strong>Цель игры:</strong> На Земле произошла глобальная катастрофа. Рядом есть бункер, но мест в нём не хватит на всех. Ваша задача — доказать остальным, что именно вы нужны для выживания внутри и восстановления жизни снаружи.</p>
     <ul style="padding-left:18px; font-size:0.9rem; line-height:1.55; color:#cbd5e1; margin-bottom:14px;">
       <li><strong>Секретность и открытие карт:</strong> Изначально ваши характеристики видите только вы. В каждом раунде вы сами выбираете, какую карту открыть остальным (кнопка «👁️ Открыть всем»).</li>
       <li><strong>Дебаты:</strong> После раскрытия карт даётся время на обсуждение. Защищайте свои козыри, указывайте на опасные болезни или фобии конкурентов.</li>
@@ -267,7 +266,7 @@
 </div>
 
 <div id="toastBox" class="toast"></div>
-<script>
+  <script>
 const DB_URL = "https://" + "bunker-test-846a1-default-rtdb" + ".europe-west1." + "firebasedatabase.app";
 
 function makeSvgUrl(innerSvg) {
@@ -509,7 +508,7 @@ function downloadSelfFile() {
 function setOnlineStatus(ok, errText) {
   const pill = el("connStatus");
   if (ok) {
-    pill.textContent = "● Онлайн (0.5 сек)";
+    pill.textContent = "● Онлайн";
     pill.classList.remove("err");
   } else {
     pill.textContent = errText || "● Ошибка связи с базой";
@@ -688,7 +687,10 @@ function fillPreset(n) {
   const arr = new Array();
   for (let i = 1; i <= n; i++) arr.push("Игрок " + i);
   el("namesInput").value = arr.join("\n");
-  el("seatsInput").value = Math.floor(n / 2);
+  if (n === 15) el("seatsInput").value = 9;
+  else if (n === 18) el("seatsInput").value = 11;
+  else if (n === 22) el("seatsInput").value = 13;
+  else el("seatsInput").value = Math.ceil(n * 0.6);
 }
 
 function pick(arr) { return arr.at(Math.floor(Math.random() * arr.length)); }
@@ -703,7 +705,7 @@ function generateBio() {
 async function createNewGame() {
   const names = el("namesInput").value.split("\n").map(s => s.trim()).filter(Boolean);
   if (names.length < 4) return toast("Нужно минимум 4 игрока!");
-  const seats = parseInt(el("seatsInput").value) || Math.floor(names.length / 2);
+  const seats = parseInt(el("seatsInput").value) || Math.ceil(names.length * 0.6);
   const chosenKey = el("disasterSelect") ? el("disasterSelect").value : "random";
   const disaster = chosenKey === "random" ? pick(DISASTERS) : (DISASTERS.find(d => d.key === chosenKey) || pick(DISASTERS));
   const newGameId = "game_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
@@ -916,21 +918,42 @@ function toggleVoting() {
   }
 }
 
-function castVote(targetId) {
+async function castVote(targetId) {
   if (!gameState || !myPlayerId || !gameState.votingOpen) return;
   const me = gameState.players.find(x => x.id === myPlayerId);
   if (!me || !me.alive) return toast("Выбывшие игроки не голосуют!");
-  if (!gameState.votes) gameState.votes = {};
-  gameState.votes[myPlayerId] = targetId;
 
-  const alivePlayers = gameState.players.filter(p => p.alive);
-  const votedAliveCount = alivePlayers.filter(p => Boolean(gameState.votes[p.id])).length;
-  if (votedAliveCount >= alivePlayers.length) {
-    finishVotingAndEliminate(gameState, true);
+  isPushing = true;
+  try {
+    await fetch(DB_URL + "/gameRoom/state/votes/" + myPlayerId + ".json", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(targetId)
+    });
+
+    const res = await fetch(DB_URL + "/gameRoom/state.json", { cache: "no-store" });
+    const freshState = await res.json();
+    if (!freshState) return;
+    if (!freshState.votes) freshState.votes = {};
+    freshState.votes[myPlayerId] = targetId;
+
+    const alivePlayers = freshState.players.filter(p => p.alive);
+    const votedAliveCount = alivePlayers.filter(p => Boolean(freshState.votes[p.id])).length;
+
+    if (freshState.votingOpen && votedAliveCount >= alivePlayers.length) {
+      finishVotingAndEliminate(freshState, true);
+      await pushState(freshState);
+    } else {
+      gameState = freshState;
+      lastHash = "";
+      renderAll();
+    }
+    toast("✅ Ваш голос учтён!");
+  } catch (e) {
+    toast("⚠️ Ошибка сети при голосовании, нажмите ещё раз");
+  } finally {
+    setTimeout(() => { isPushing = false; }, 150);
   }
-
-  pushState(gameState);
-  toast("✅ Ваш голос учтён!");
 }
 
 function buildFinalVerdict(survivors) {
@@ -1197,3 +1220,4 @@ setInterval(pollDatabase, 500);
 </script>
 </body>
 </html>
+
