@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>БУНКЕР LIVE v4.1</title>
+<title>БУНКЕР LIVE v4.2</title>
 <style>
   :root {
     --bg: #0b0f17;
@@ -64,7 +64,6 @@
 
   .card-box { background: var(--card); backdrop-filter: blur(8px); border: 1px solid var(--card-border); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
 
-  /* Крупная и чёткая карточка катастрофы */
   .disaster-card { padding: 0; overflow: hidden; border: 2px solid rgba(245, 158, 11, 0.55); box-shadow: 0 12px 30px rgba(0,0,0,0.5); }
   .disaster-banner { width: 100%; height: 185px; background-size: cover; background-position: center; border-bottom: 1px solid var(--card-border); position: relative; }
   .disaster-tag { position: absolute; top: 12px; left: 14px; background: rgba(11, 15, 23, 0.85); color: var(--accent); border: 1px solid var(--accent); padding: 4px 10px; border-radius: 8px; font-size: 0.76rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; }
@@ -118,7 +117,7 @@
 
 <div class="container">
   <div class="topbar">
-    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v4.1</span></div>
+    <div class="logo">☢️ БУНКЕР <span class="badge-v">LIVE v4.2</span></div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button class="btn btn-sm" onclick="toggleRules(true)">📖 Правила</button>
       <button class="btn btn-sm" onclick="downloadSelfFile()">💾 Скачать файл</button>
@@ -154,7 +153,6 @@
   </div>
 
   <div id="screenGame" class="screen">
-    <!-- КАРТОЧКА ПРОИСШЕСТВИЯ НА САМОМ ВЕРХУ ИГРОВОГО ЭКРАНА -->
     <div id="disasterBlock" class="card-box disaster-card" style="display:none;">
       <div id="disasterBannerBox" class="disaster-banner">
         <span class="disaster-tag">⚠️ Глобальная катастрофа и условия убежища</span>
@@ -248,10 +246,10 @@
 
     <div id="votingBlock" class="vote-panel" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
-        <h3 style="color:var(--accent);">🗳️ Голосование: Кого НЕ пустим в бункер?</h3>
+        <h3 style="color:var(--accent);">🗳️ Тайное голосование: Кого НЕ пустим в бункер?</h3>
         <span id="voteProgress" style="font-size:0.85rem; font-weight:700; color:var(--green);"></span>
       </div>
-      <p style="font-size:0.83rem; color:var(--muted); margin-bottom:12px;">Когда проголосуют все или ведущий закроет голосование, набравший больше всего голосов вылетит автоматически:</p>
+      <p style="font-size:0.83rem; color:var(--muted); margin-bottom:12px;">Голоса скрыты до конца раунда. Когда проголосуют все или ведущий закроет голосование, набравший больше всего голосов вылетит автоматически:</p>
       <div id="voteCandidatesList"></div>
     </div>
 
@@ -275,7 +273,7 @@
       <li><strong>Секретность и открытие карт:</strong> Изначально ваши характеристики видите только вы. В каждом раунде вы сами выбираете, какую карту открыть остальным (кнопка «👁️ Открыть всем»).</li>
       <li><strong>Дебаты:</strong> После раскрытия карт даётся время на обсуждение. Защищайте свои козыри, указывайте на опасные болезни или фобии конкурентов.</li>
       <li><strong>Автоматические спецкарты:</strong> У каждого игрока есть 1 карта особого действия — при нажатии «Активировать» она сама меняет карты со случайным игроком, лечит болезнь, даёт иммунитет или двойной голос.</li>
-      <li><strong>Голосование:</strong> По команде ведущих открывается голосование на телефонах со сводкой открытых карт. Набравший больше всего голосов вылетает из круга.</li>
+      <li><strong>Тайное голосование:</strong> По команде ведущих открывается голосование на телефонах со сводкой открытых карт. Набравший больше всего голосов вылетает из круга.</li>
       <li><strong>Финал:</strong> Когда остаётся нужное число выживших, двери бункера закрываются, а система оценивает шансы команды на спасение.</li>
     </ul>
     <button class="btn btn-primary btn-block" onclick="toggleRules(false)">Понятно, вернуться в игру</button>
@@ -1023,7 +1021,7 @@ function finishVotingAndEliminate(stateObj, votesMap, isAuto) {
   const pool = vulnerable.length > 0 ? vulnerable : alive;
 
   let maxVotes = 0;
-  pool.forEach(p => { if (counts[p.id] > maxVotes) maxVotes = c; });
+  pool.forEach(p => { if (counts[p.id] > maxVotes) maxVotes = counts[p.id]; });
 
   stateObj.players.forEach(p => { p.hasImmunity = false; });
 
@@ -1303,6 +1301,7 @@ function renderAll() {
       }
     });
     const maxVotes = Math.max(0, ...Object.values(counts));
+    const showStats = isAdmin();
 
     const myVote = myPlayerId ? votesMap[myPlayerId] : null;
     el("voteCandidatesList").innerHTML = alivePlayers.map(cand => {
@@ -1315,14 +1314,19 @@ function renderAll() {
       const isMyChoice = myVote === cand.id;
       const isLeader = maxVotes > 0 && counts[cand.id] === maxVotes && !cand.hasImmunity;
       const immTag = cand.hasImmunity ? ' <span class="buff-badge">🛡️ Иммунитет</span>' : '';
+      const statsHtml = showStats
+        ? ' <span style="color:var(--accent);">(' + counts[cand.id] + ' гол. / ' + pct + '%)</span>' + (isLeader ? ' <span style="color:var(--red); font-size:0.78rem;">🔥 Лидер на вылет</span>' : '')
+        : '';
+      const barHtml = showStats ? '<div class="vote-bar-bg"><div class="vote-bar-fill" style="width:' + pct + '%;"></div></div>' : '';
+
       const voteBtn = (currentRole === "player" && cand.id !== myPlayerId)
         ? '<button class="btn btn-sm ' + (isMyChoice ? 'btn-green' : 'btn-red') + '" onclick="castVote(\'' + cand.id + '\')">' + (isMyChoice ? '✅ Ваш голос' : 'Против') + '</button>'
         : '';
 
-      return '<div class="vote-item ' + (isLeader ? 'leader' : '') + '" style="' + (isMyChoice ? 'border-color:var(--green);' : '') + '">' +
-        '<div class="vote-item-head"><strong>' + cand.name + immTag + ' <span style="color:var(--accent);">(' + counts[cand.id] + ' гол. / ' + pct + '%)</span>' + (isLeader ? ' <span style="color:var(--red); font-size:0.78rem;">🔥 Лидер на вылет</span>' : '') + '</strong>' + voteBtn + '</div>' +
+      return '<div class="vote-item ' + ((showStats && isLeader) ? 'leader' : '') + '" style="' + (isMyChoice ? 'border-color:var(--green);' : '') + '">' +
+        '<div class="vote-item-head"><strong>' + cand.name + immTag + statsHtml + '</strong>' + voteBtn + '</div>' +
         '<div class="vote-open-traits">' + (openChips || '<span style="color:var(--muted);">Пока не открыто ни одной характеристики</span>') + '</div>' +
-        '<div class="vote-bar-bg"><div class="vote-bar-fill" style="width:' + pct + '%;"></div></div>' +
+        barHtml +
         '</div>';
     }).join("");
   } else {
